@@ -10,15 +10,14 @@ import Combine
 class OllamaService {
     
     private let modelFamily: ModelFamily = .ollama
-    private var instance: Ollama?
     private var generation: AnyCancellable?
-    
+//    private var cancellables = Set<AnyCancellable>()
     static let shared = OllamaService()
     
     private init() {}
     
     func fetchModels(host: String) async throws -> [String] {
-        let response: ModelResponse = try await Ollama(host).models()
+        let response: ModelResponse = try await Ollama.shared.models(host: host)
         let responseModels: [ModelResponse.Model] = response.models
         var models: [String] = []
         for responseModel in responseModels {
@@ -28,8 +27,8 @@ class OllamaService {
     }
     
     func cancelGenerate() {
-        generation?.cancel()
-        instance?.cancelRequest()
+//        generation?.cancel()
+        Ollama.shared.cancelRequest()
     }
     
     func callGenerateApi(prompt: String,
@@ -49,8 +48,7 @@ class OllamaService {
         }
         let options: Options = Options()
         request.options = options
-        instance = Ollama(endpoint.host)
-        generation = try await instance!.generate(data: request)
+        generation = try await Ollama.shared.generate(host: endpoint.host, data: request)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
@@ -61,6 +59,7 @@ class OllamaService {
             }, receiveValue: { response in
                 onMessage(response)
             })
+//            .store(in: &cancellables)
     }
     
     func callCompletionApi(messages: [Message],
@@ -73,8 +72,7 @@ class OllamaService {
         var request: OllamaCompletionRequest = OllamaCompletionRequest(model: endpoint.endpoint, messages: messageContents)
         let options: Options = Options()
         request.options = options
-        instance = Ollama(endpoint.host)
-        generation = try await instance!.completion(data: request)
+        generation = try await Ollama.shared.completion(host: endpoint.host, data: request)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
@@ -83,7 +81,6 @@ class OllamaService {
                     onError(AppError.networkError(description: error.localizedDescription))
                 }
             }, receiveValue: { response in
-//                generalResponse.response = response.message?.content
                 onMessage(response)
             })
     }

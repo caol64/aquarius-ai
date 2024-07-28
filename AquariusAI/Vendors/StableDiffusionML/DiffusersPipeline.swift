@@ -8,7 +8,6 @@
 import Foundation
 import StableDiffusion
 import CoreML
-import UniformTypeIdentifiers
 
 class DiffusersPipeline {
     
@@ -16,12 +15,13 @@ class DiffusersPipeline {
     private let scheduler: StableDiffusionScheduler = .dpmSolverMultistepScheduler
     private let rng: StableDiffusionRNG = .numpyRNG
     private let pipeline: StableDiffusionPipelineProtocol
+    private var canceled = false
 
     private init(pipeline: StableDiffusionPipelineProtocol) {
         self.pipeline = pipeline
     }
 
-    static func load(endpoint: Endpoint, diffusersConfig: DiffusersConfig) async throws {
+    static func load(endpoint: Endpoint, diffusersConfig: DiffusersConfig, onComplete: (_ interval: TimeInterval) -> Void) async throws {
         print("start load pipeline")
         let startTime = Date()
         var modelDirectory: URL?
@@ -59,7 +59,7 @@ class DiffusersPipeline {
         try pipeline.loadResources()
         let interval = Date().timeIntervalSince(startTime)
         shared = DiffusersPipeline(pipeline: pipeline)
-        print("pipeline loaded in \(interval) s")
+        onComplete(interval)
     }
     
     static func clear() {
@@ -77,8 +77,10 @@ class DiffusersPipeline {
     func generate(prompt: String,
                   negativePrompt: String,
                   diffusersConfig: DiffusersConfig,
-                  onComplete: @escaping (_ file: CGImage?) -> Void) async throws {
+                  onComplete: @escaping (_ file: CGImage?, _ interval: TimeInterval) -> Void,
+                  onProgress: (_ progress: PipelineProgress) -> Void) async throws {
         print("start generate")
+        canceled = false
         let startTime = Date()
         let stepCount: Int = diffusersConfig.stepCount
         let cfgScale: Float = diffusersConfig.cfgScale
@@ -109,19 +111,18 @@ class DiffusersPipeline {
 //            if progress.stepCount != progress.step {
 //                sampleTimer.start()
 //            }
-//            print(progress)
-            return true
+//            print(progress.currentImages)
+            onProgress(progress)
+            return !canceled
         })
         let interval = Date().timeIntervalSince(startTime)
-        print("Got images: \(images) in \(interval) s")
-        
-
-//        let paths: [String] = try saveImages(images, logNames: true, prompt: prompt)
-        onComplete(images[0])
+        if !canceled {
+            onComplete(images[0], interval)
+        }
     }
     
     func cancelGenerate() {
-        
+        canceled = true
     }
     
 }

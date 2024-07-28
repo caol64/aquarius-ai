@@ -12,7 +12,8 @@ struct ImageGenerateView: View {
     
     enum GenerationState {
         case startup
-        case running
+        case loading
+        case running(CGImage?)
         case complete(CGImage?)
         //        case userCanceled
         case failed
@@ -26,6 +27,7 @@ struct ImageGenerateView: View {
     @State private var showFileExporter: Bool = false
     @State private var config: DiffusersConfig = DiffusersConfig()
     @State private var generationState: GenerationState = .startup
+    @State private var status: String = ""
     
     var body: some View {
         NavigationSplitView {
@@ -40,6 +42,7 @@ struct ImageGenerateView: View {
                 generationConfigs(config: $config)
                 generationButton()
                     .padding(.top, 4)
+                statusBar()
             }
             .topAligned()
             .padding()
@@ -49,8 +52,14 @@ struct ImageGenerateView: View {
                 switch generationState {
                 case .startup, .failed:
                     Image(systemName: "photo")
-                case .running:
+                case .loading:
                     ProgressView()
+                case .running(let image):
+                    if let preview = image {
+                        previewView(image: preview)
+                    } else {
+                        ProgressView()
+                    }
                 case .complete(let image):
                     completeView(image: image)
                 }
@@ -111,8 +120,20 @@ struct ImageGenerateView: View {
     }
     
     private func generationButton() -> some View {
-        Button("Generate") {
-            onGenerate()
+        VStack {
+            if case .running = generationState {
+                Button("  Cancel  ") {
+                    onCancel()
+                }
+            } else if case .loading = generationState {
+                Button("Generate") {
+                }
+                .disabled(true)
+            } else {
+                Button("Generate") {
+                    onGenerate()
+                }
+            }
         }
         .buttonStyle(.borderedProminent)
         .rightAligned()
@@ -147,6 +168,27 @@ struct ImageGenerateView: View {
         }
     }
     
+    private func previewView(image: CGImage) -> some View {
+        VStack {
+            ZStack {
+                Image(image, scale: 1.0, label: Text(""))
+                    .resizable()
+                    .scaledToFit()
+                
+                ProgressView()
+            }
+        }
+        .aspectRatio(contentMode: .fit)
+        .frame(width: 512, height: 512)
+        .cornerRadius(15)
+    }
+    
+    private func statusBar() -> some View {
+        Text(status)
+            .bottomAligned()
+            .leftAligned()
+    }
+    
     // MARK: - Actions
     private func onGenerate() {
         if case .running = generationState {
@@ -155,25 +197,35 @@ struct ImageGenerateView: View {
         if prompt.isEmpty {
             errorBinding.appError = AppError.promptEmpty
         }
+        status = ""
         guard let endpoint = endpoint else {
             errorBinding.appError = AppError.missingModel
             return
         }
         Task {
-            generationState = .running
             do {
                 if DiffusersPipeline.shared == nil {
-                    try await DiffusersPipeline.load(endpoint: endpoint, diffusersConfig: config)
+                    generationState = .loading
+                    status = "Loading model..."
+                    try await DiffusersPipeline.load(endpoint: endpoint, diffusersConfig: config) { interval in
+                        status = "Model loaded successfully in \(String(format: "%.1f", interval)) s."
+                    }
                 }
                 guard let pipeline = DiffusersPipeline.shared else {
                     return
                 }
-                try await pipeline.generate(prompt: prompt, negativePrompt: negativePrompt, diffusersConfig: config) { file in
+                generationState = .running(nil)
+                try await pipeline.generate(prompt: prompt, negativePrompt: negativePrompt, diffusersConfig: config) { file, interval in
                     if file != nil {
                         generationState = .complete(file)
+                        status = "Generating successfully in \(String(format: "%.1f", interval)) s."
                     } else {
                         generationState = .failed
+                        status = "Generating failed."
                     }
+                } onProgress: { progress in
+                    status = "Generating progress \(progress.step + 1) / \(progress.stepCount) ..."
+                    generationState = .running(progress.currentImages[0])
                 }
             } catch {
                 errorBinding.appError = AppError.dbError(description: error.localizedDescription)
@@ -186,6 +238,11 @@ struct ImageGenerateView: View {
         if let endpoint = endpoint {
             modelName = endpoint.name
         }
+    }
+    
+    private func onCancel() {
+        DiffusersPipeline.shared?.cancelGenerate()
+        generationState = .startup
     }
     
 }

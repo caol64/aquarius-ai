@@ -9,123 +9,101 @@ import Alamofire
 import Combine
 
 class Ollama {
-    private var baseURL: URL
-    private var streamRequest: DataStreamRequest?
-    private var decoder: JSONDecoder {
+    private var isCanceled = false
+    private let headers: HTTPHeaders = ["Content-Type": "application/json"]
+    private let encoder: JSONEncoder = _encoder()
+    private let decoder: JSONDecoder = _decoder()
+    static let shared = Ollama()
+    
+    private init() {
+        self.decoder.keyDecodingStrategy = .convertFromSnakeCase
+    }
+    
+    private static func _encoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        return encoder
+    }
+    
+    private static func _decoder() -> JSONDecoder {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
         decoder.dateDecodingStrategy = .custom { decoder -> Date in
             let container = try decoder.singleValueContainer()
             let dateString = try container.decode(String.self)
-            
             let formatter = ISO8601DateFormatter()
             formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            
             if let date = formatter.date(from: dateString) {
                 return date
             }
-            
             formatter.formatOptions = [.withInternetDateTime]
-            
             if let date = formatter.date(from: dateString) {
                 return date
             }
-            
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Cannot decode date string \(dateString)")
         }
-        
         return decoder
     }
-    private var encoder: JSONEncoder {
-        let encoder = JSONEncoder()
-        encoder.keyEncodingStrategy = .convertToSnakeCase
-        
-        return encoder
-    }
-    private var headers: HTTPHeaders {
-        ["Content-Type": "application/json"]
-    }
     
-    init(_ baseURL: String) {
-        self.baseURL = URL(string: baseURL)!
-        self.decoder.keyDecodingStrategy = .convertFromSnakeCase
+    private func makeStreamRequest<T: Decodable, R: Encodable>(requestData: R, host: String, path: String) async throws -> AnyPublisher<T, AFError> {
+        let url = URL(string: host)!.appendingPathComponent(path)
+        let subject = PassthroughSubject<T, AFError>()
+        let request = AF.streamRequest(url,
+                                       method: .post,
+                                       headers: headers) { urlRequest in
+            urlRequest.httpBody = try self.encoder.encode(requestData)
+        }.validate()
+        
+        let _: DataStreamRequest = request.responseStreamDecodable(of: T.self, using: decoder) { stream in
+            switch stream.event {
+            case .stream(let result):
+                switch result {
+                case .success(let response):
+                    subject.send(response)
+                case .failure(let error):
+                    subject.send(completion: .failure(error))
+                }
+            case .complete(_):
+                subject.send(completion: .finished)
+            }
+        }
+        
+        return subject.eraseToAnyPublisher()
     }
 }
 
 // MARK: - models
 extension Ollama {
-    
-    func models() async throws -> ModelResponse {
-        let request = AF.request(baseURL.appendingPathComponent("/api/tags")).validate()
+    func models(host: String) async throws -> ModelResponse {
+        let url = URL(string: host)!.appendingPathComponent("/api/tags")
+        let request = AF.request(url).validate()
         let response = request.serializingDecodable(ModelResponse.self, decoder: decoder)
-        
         return try await response.value
     }
 }
 
 // MARK: - generate
 extension Ollama {
-
-    func generate(data: OllamaGenerateRequest) async throws -> AnyPublisher<OllamaGenerateResponse, AFError> {
-        let subject = PassthroughSubject<OllamaGenerateResponse, AFError>()
-        let request = AF.streamRequest(baseURL.appendingPathComponent("/api/generate"),
-                                       method: .post,
-                                       headers: headers) { urlRequest in
-            urlRequest.httpBody = try self.encoder.encode(data)
-        }.validate()
-        
-        streamRequest = request.responseStreamDecodable(of: OllamaGenerateResponse.self, using: decoder) { stream in
-            switch stream.event {
-            case .stream(let result):
-                switch result {
-                case .success(let response):
-                    subject.send(response)
-                case .failure(let error):
-                    subject.send(completion: .failure(error))
-                }
-            case .complete(_):
-                subject.send(completion: .finished)
-            }
-        }
-        
-        return subject.eraseToAnyPublisher()
+    func generate(host: String, data: OllamaGenerateRequest) async throws -> AnyPublisher<OllamaGenerateResponse, AFError> {
+        return try await makeStreamRequest(requestData: data, host: host, path: "/api/generate")
     }
 }
 
 // MARK: - completion
 extension Ollama {
-
-    func completion(data: OllamaCompletionRequest) async throws -> AnyPublisher<OllamaCompletionResponse, AFError> {
-        let subject = PassthroughSubject<OllamaCompletionResponse, AFError>()
-        let request = AF.streamRequest(baseURL.appendingPathComponent("/api/chat"),
-                                       method: .post,
-                                       headers: headers) { urlRequest in
-            urlRequest.httpBody = try self.encoder.encode(data)
-        }.validate()
-        
-        streamRequest = request.responseStreamDecodable(of: OllamaCompletionResponse.self, using: decoder) { stream in
-            switch stream.event {
-            case .stream(let result):
-                switch result {
-                case .success(let response):
-                    subject.send(response)
-                case .failure(let error):
-                    subject.send(completion: .failure(error))
-                }
-            case .complete(_):
-                subject.send(completion: .finished)
-            }
-        }
-        
-        return subject.eraseToAnyPublisher()
+    func completion(host: String, data: OllamaCompletionRequest) async throws -> AnyPublisher<OllamaCompletionResponse, AFError> {
+        return try await makeStreamRequest(requestData: data, host: host, path: "/api/chat")
     }
 }
 
 // MARK: - cancelRequest
 extension Ollama {
-    
     func cancelRequest() {
-        streamRequest?.cancel()
+        AF.session.getTasksWithCompletionHandler { (sessionDataTask, uploadData, downloadData) in
+            sessionDataTask.forEach { $0.cancel() }
+            uploadData.forEach { $0.cancel() }
+            downloadData.forEach { $0.cancel() }
+        }
     }
 }
 
