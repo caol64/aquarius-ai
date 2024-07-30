@@ -1,5 +1,5 @@
 //
-//  ModelsSettingsView.swift
+//  EndpointsSettingsView.swift
 //  AquariusAI
 //
 //  Created by Lei Cao on 2024/7/1.
@@ -8,10 +8,10 @@
 import SwiftUI
 import SwiftData
 
-struct ModelsSettingsView: View {
+struct EndpointsSettingsView: View {
     @Environment(ErrorBinding.self) private var errorBinding
     @State private var showConfirmView = false
-    @State private var selectedModelFamily: ModelFamily = .sd
+    @State private var selectedModelFamily: ModelFamily = .diffusers
     @State private var endpoints: [Endpoint] = []
     @State private var selectedEndpoint: Endpoint?
     private let endpointService = EndpointService.shared
@@ -79,7 +79,7 @@ struct ModelsSettingsView: View {
                     .frame(width: 200, height: 480)
                     
                     if let endpoint = selectedEndpoint {
-                        ModelsEditor(endpoint: endpoint)
+                        EndpointsEditor(endpoint: endpoint)
                             .frame(width: 640, height: 480)
                     } else {
                         ContentUnavailableView {
@@ -139,10 +139,10 @@ struct ModelsSettingsView: View {
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: Endpoint.self, configurations: config)
-    container.mainContext.insert(Endpoint(name: "sd3", modelFamily: .sd))
+    container.mainContext.insert(Endpoint(name: "sd3", modelFamily: .diffusers))
     container.mainContext.insert(Endpoint(name: "qwen7b", modelFamily: .ollama))
     EndpointService.shared.configure(with: container.mainContext)
     
-    return ModelsSettingsView()
+    return EndpointsSettingsView()
         .environment(ErrorBinding())
 }

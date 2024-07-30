@@ -25,7 +25,7 @@ struct TextGenerateView: View {
                 genrateOptions()
                 prompts()
                 
-                ModelPicker(endpoint: $endpoint, modelFamily: .ollama)
+                EndpointPicker(endpoint: $endpoint, modelFamily: .ollama)
                     .padding(.top, 8)
                     .onChange(of: endpoint) {
                         onModelChange()

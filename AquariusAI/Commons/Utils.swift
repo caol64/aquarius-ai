@@ -5,7 +5,6 @@
 //  Created by Lei Cao on 2024/5/10.
 //
 
-import Foundation
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -84,14 +83,14 @@ func isFileReadable(path: String) -> Bool {
     return fileManager.isReadableFile(atPath: path)
 }
 
-func restoreFileAccess(with bookmarkData: Data, id: String) -> URL? {
+func restoreFileAccess(with bookmarkData: Data, endpoint: Endpoint) -> URL? {
     do {
         var isStale = false
         let url = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
         if isStale {
             // bookmarks could become stale as the OS changes
             print("Bookmark is stale, need to save a new one... ")
-            saveBookmarkData(for: url, id: id)
+            saveBookmarkData(for: url, endpoint: endpoint)
         }
         return url
     } catch {
@@ -100,12 +99,12 @@ func restoreFileAccess(with bookmarkData: Data, id: String) -> URL? {
     }
 }
 
-func saveBookmarkData(for workDir: URL, id: String) {
+func saveBookmarkData(for workDir: URL, endpoint: Endpoint) {
     do {
         let bookmarkData = try workDir.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
                                                     includingResourceValuesForKeys: nil,
                                                     relativeTo: nil)
-        UserDefaults.standard.set(bookmarkData, forKey: "bookmark_\(id)")
+        endpoint.bookmark = bookmarkData
     } catch {
         print("Failed to save bookmark data for \(workDir)", error)
     }

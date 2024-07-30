@@ -18,6 +18,7 @@ class Endpoint: Identifiable {
     var appkey: String = ""
     var createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
+    var bookmark: Data?
     
     init(name: String, modelFamily: ModelFamily) {
         self.name = name

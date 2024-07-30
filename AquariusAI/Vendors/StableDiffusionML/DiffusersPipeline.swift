@@ -11,22 +11,56 @@ import CoreML
 
 class DiffusersPipeline {
     
-    static var shared: DiffusersPipeline?
     private let scheduler: StableDiffusionScheduler = .dpmSolverMultistepScheduler
     private let rng: StableDiffusionRNG = .numpyRNG
-    private let pipeline: StableDiffusionPipelineProtocol
+    private var pipeline: StableDiffusionPipelineProtocol?
+    private let endpoint: Endpoint
+    private let diffusersConfig: DiffusersConfig
     private var canceled = false
 
-    private init(pipeline: StableDiffusionPipelineProtocol) {
-        self.pipeline = pipeline
+    init(endpoint: Endpoint, diffusersConfig: DiffusersConfig) {
+        self.endpoint = endpoint
+        self.diffusersConfig = diffusersConfig
+    }
+    
+    deinit {
+        pipeline?.unloadResources()
+        print("unloadResources")
     }
 
-    static func load(endpoint: Endpoint, diffusersConfig: DiffusersConfig, onComplete: (_ interval: TimeInterval) -> Void) async throws {
-        print("start load pipeline")
+    private func loadModel(modelDirectory: URL) async throws -> TimeInterval {
+        let startTime = Date()
+        let config = MLModelConfiguration()
+        let computeUnits: MLComputeUnits = .cpuAndGPU
+        config.computeUnits = computeUnits
+        if diffusersConfig.isXL {
+            if #available(macOS 14.0, iOS 17.0, *) {
+                pipeline = try StableDiffusionXLPipeline(resourcesAt: modelDirectory,
+                                                         configuration: config,
+                                                         reduceMemory: diffusersConfig.reduceMemory)
+            } else {
+                throw AppError.bizError(description: "Stable Diffusion XL requires macOS 14")
+            }
+        } else {
+            pipeline = try StableDiffusionPipeline(resourcesAt: modelDirectory,
+                                                   controlNet: [],
+                                                   configuration: config,
+                                                   reduceMemory: diffusersConfig.reduceMemory)
+        }
+        try pipeline?.loadResources()
+        let interval = Date().timeIntervalSince(startTime)
+        return interval
+    }
+    
+    func generate(prompt: String,
+                  negativePrompt: String,
+                  onLoadComplete: (_ interval: TimeInterval) -> Void,
+                  onGenerateComplete: @escaping (_ file: CGImage?, _ interval: TimeInterval) -> Void,
+                  onProgress: (_ progress: PipelineProgress) -> Void) async throws {
         let startTime = Date()
         var modelDirectory: URL?
-        if let data = UserDefaults.standard.data(forKey: "bookmark_\(endpoint.id)") {
-            modelDirectory = restoreFileAccess(with: data, id: endpoint.id)
+        if let data = endpoint.bookmark {
+            modelDirectory = restoreFileAccess(with: data, endpoint: endpoint)
         }
         guard let directory = modelDirectory else {
             throw AppError.bizError(description: "The model path is invalid, please check it in settings.")
@@ -38,50 +72,11 @@ class DiffusersPipeline {
         defer {
             directory.stopAccessingSecurityScopedResource()
         }
-        let config = MLModelConfiguration()
-        let computeUnits: MLComputeUnits = .cpuAndGPU
-        config.computeUnits = computeUnits
-        let pipeline: StableDiffusionPipelineProtocol
-        if diffusersConfig.isXL {
-            if #available(macOS 14.0, iOS 17.0, *) {
-                pipeline = try StableDiffusionXLPipeline(resourcesAt: directory,
-                                                         configuration: config,
-                                                         reduceMemory: diffusersConfig.reduceMemory)
-            } else {
-                throw AppError.bizError(description: "Stable Diffusion XL requires macOS 14")
-            }
-        } else {
-            pipeline = try StableDiffusionPipeline(resourcesAt: directory,
-                                                   controlNet: [],
-                                                   configuration: config,
-                                                   reduceMemory: diffusersConfig.reduceMemory)
-        }
-        try pipeline.loadResources()
-        let interval = Date().timeIntervalSince(startTime)
-        shared = DiffusersPipeline(pipeline: pipeline)
-        onComplete(interval)
-    }
-    
-    static func clear() {
-        if let instance = shared {
-            instance.unload()
-            shared = nil
-        }
-    }
-    
-    private func unload() {
-        pipeline.unloadResources()
-        print("unloadResources")
-    }
-    
-    func generate(prompt: String,
-                  negativePrompt: String,
-                  diffusersConfig: DiffusersConfig,
-                  onComplete: @escaping (_ file: CGImage?, _ interval: TimeInterval) -> Void,
-                  onProgress: (_ progress: PipelineProgress) -> Void) async throws {
+        var interval = try await loadModel(modelDirectory: directory)
+        onLoadComplete(interval)
+        
         print("start generate")
         canceled = false
-        let startTime = Date()
         let stepCount: Int = diffusersConfig.stepCount
         let cfgScale: Float = diffusersConfig.cfgScale
         var pipelineConfig = diffusersConfig.isXL ? StableDiffusionXLPipeline.Configuration(prompt: prompt) : StableDiffusionPipeline.Configuration(prompt: prompt)
@@ -103,21 +98,14 @@ class DiffusersPipeline {
         pipelineConfig.useDenoisedIntermediates = true
         pipelineConfig.encoderScaleFactor = diffusersConfig.scaleFactor
         pipelineConfig.decoderScaleFactor = diffusersConfig.scaleFactor
-//        pipelineConfig.schedulerTimestepSpacing = .karras
-        let images = try pipeline.generateImages(configuration: pipelineConfig,
+        let images = try pipeline!.generateImages(configuration: pipelineConfig,
                                                  progressHandler: { progress in
-//            sampleTimer.stop()
-//            onMessage(GeneralResponse(data: ""))
-//            if progress.stepCount != progress.step {
-//                sampleTimer.start()
-//            }
-//            print(progress.currentImages)
             onProgress(progress)
             return !canceled
         })
-        let interval = Date().timeIntervalSince(startTime)
+        interval = Date().timeIntervalSince(startTime)
         if !canceled {
-            onComplete(images[0], interval)
+            onGenerateComplete(images[0], interval)
         }
     }
     

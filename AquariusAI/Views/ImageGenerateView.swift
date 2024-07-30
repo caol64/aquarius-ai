@@ -14,7 +14,7 @@ struct ImageGenerateView: View {
         case startup
         case loading
         case running(CGImage?)
-        case complete(CGImage?)
+        case complete(CGImage)
         //        case userCanceled
         case failed
     }
@@ -28,13 +28,14 @@ struct ImageGenerateView: View {
     @State private var config: DiffusersConfig = DiffusersConfig()
     @State private var generationState: GenerationState = .startup
     @State private var status: String = ""
+    @State private var upscalerEndpoints: [Endpoint] = []
     
     var body: some View {
         NavigationSplitView {
             VStack() {
                 genrateOptions()
                 prompts()
-                ModelPicker(endpoint: $endpoint, modelFamily: .sd)
+                EndpointPicker(endpoint: $endpoint, modelFamily: .diffusers)
                     .padding(.top, 4)
                     .onChange(of: endpoint) {
                         onModelChange(endpoint: endpoint)
@@ -50,8 +51,10 @@ struct ImageGenerateView: View {
         } detail: {
             VStack {
                 switch generationState {
-                case .startup, .failed:
+                case .startup:
                     Image(systemName: "photo")
+                case .failed:
+                    Image(systemName: "exclamationmark.triangle")
                 case .loading:
                     ProgressView()
                 case .running(let image):
@@ -64,12 +67,9 @@ struct ImageGenerateView: View {
                     completeView(image: image)
                 }
             }
-            .navigationTitle("Stable Diffusion")
-            .navigationSubtitle(modelName)
+            .navigationTitle(modelName)
+//            .navigationSubtitle(modelName)
             .navigationSplitViewColumnWidth(min: 600, ideal: 600, max: 900)
-        }
-        .onDisappear {
-            DiffusersPipeline.clear()
         }
         
     }
@@ -111,6 +111,14 @@ struct ImageGenerateView: View {
             }
             .padding(.top, 4)
             
+            Picker(selection: $config.imageRatio, label: Text("Image Ratio")) {
+                ForEach(ImageRatio.allCases) {
+                    Text($0.rawValue)
+                        .tag($0)
+                }
+            }
+            .pickerStyle(SegmentedPickerStyle())
+            
             Toggle(isOn: $config.isXL) {
                 Text("XL")
             }
@@ -139,9 +147,9 @@ struct ImageGenerateView: View {
         .rightAligned()
     }
     
-    private func completeView(image: CGImage?) -> some View {
+    private func completeView(image: CGImage) -> some View {
         VStack {
-            Image(image!, scale: 1.0, label: Text(""))
+            Image(image, scale: 1.0, label: Text(""))
                 .resizable()
                 .scaledToFit()
         }
@@ -149,22 +157,7 @@ struct ImageGenerateView: View {
         .frame(width: 512, height: 512)
         .cornerRadius(15)
         .toolbar {
-            Button("Save", systemImage: "square.and.arrow.down") {
-                showFileExporter = true
-            }
-            .fileExporter(
-                isPresented: $showFileExporter,
-                document: createDocument(image: image),
-                contentType: .png,
-                defaultFilename: "out"
-            ) { result in
-                switch result {
-                case .success(let url):
-                    print("File saved to \(url)")
-                case .failure(let error):
-                    print("Failed to save file: \(error.localizedDescription)")
-                }
-            }
+            toolBar(image: image)
         }
     }
     
@@ -189,6 +182,36 @@ struct ImageGenerateView: View {
             .leftAligned()
     }
     
+    private func toolBar(image: CGImage) -> some View {
+        HStack {
+            if !upscalerEndpoints.isEmpty {
+                Button("Upscale", systemImage: "plus.magnifyingglass") {
+                    onUpscale(image: image)
+                }
+            }
+            
+            Button("Save", systemImage: "square.and.arrow.down") {
+                showFileExporter = true
+            }
+            .fileExporter(
+                isPresented: $showFileExporter,
+                document: createDocument(image: image),
+                contentType: .png,
+                defaultFilename: "out"
+            ) { result in
+                switch result {
+                case .success(let url):
+                    print("File saved to \(url)")
+                case .failure(let error):
+                    print("Failed to save file: \(error.localizedDescription)")
+                }
+            }
+        }
+        .task {
+            await onToolBarFetch()
+        }
+    }
+    
     // MARK: - Actions
     private func onGenerate() {
         if case .running = generationState {
@@ -196,6 +219,7 @@ struct ImageGenerateView: View {
         }
         if prompt.isEmpty {
             errorBinding.appError = AppError.promptEmpty
+            return
         }
         status = ""
         guard let endpoint = endpoint else {
@@ -204,24 +228,20 @@ struct ImageGenerateView: View {
         }
         Task {
             do {
-                if DiffusersPipeline.shared == nil {
-                    generationState = .loading
-                    status = "Loading model..."
-                    try await DiffusersPipeline.load(endpoint: endpoint, diffusersConfig: config) { interval in
-                        status = "Model loaded successfully in \(String(format: "%.1f", interval)) s."
-                    }
-                }
-                guard let pipeline = DiffusersPipeline.shared else {
-                    return
-                }
+                generationState = .loading
+                status = "Loading model..."
+                let pipeline = DiffusersPipeline(endpoint: endpoint, diffusersConfig: config)
                 generationState = .running(nil)
-                try await pipeline.generate(prompt: prompt, negativePrompt: negativePrompt, diffusersConfig: config) { file, interval in
-                    if file != nil {
-                        generationState = .complete(file)
-                        status = "Generating successfully in \(String(format: "%.1f", interval)) s."
+                try await pipeline.generate(prompt: prompt, negativePrompt: negativePrompt) { interval in
+                    status = "Model loaded successfully in \(String(format: "%.1f", interval)) s."
+                    generationState = .running(nil)
+                } onGenerateComplete: { file, interval in
+                    if let image = file {
+                        generationState = .complete(image)
+                        status = "Generate successfully in \(String(format: "%.1f", interval)) s."
                     } else {
                         generationState = .failed
-                        status = "Generating failed."
+                        status = "Generate failed."
                     }
                 } onProgress: { progress in
                     status = "Generating progress \(progress.step + 1) / \(progress.stepCount) ..."
@@ -229,6 +249,8 @@ struct ImageGenerateView: View {
                 }
             } catch {
                 errorBinding.appError = AppError.dbError(description: error.localizedDescription)
+                status = "Generate failed."
+                generationState = .failed
             }
         }
         
@@ -237,12 +259,42 @@ struct ImageGenerateView: View {
     private func onModelChange(endpoint: Endpoint?) {
         if let endpoint = endpoint {
             modelName = endpoint.name
+            config.isXL = modelName.lowercased().contains("xl")
         }
     }
     
     private func onCancel() {
-        DiffusersPipeline.shared?.cancelGenerate()
+//        DiffusersPipeline.shared?.cancelGenerate()
         generationState = .startup
+    }
+    
+    private func onToolBarFetch() async {
+        do {
+            upscalerEndpoints = try await EndpointService.shared.fetch(modelFamily: .upscaler)
+        } catch {
+            errorBinding.appError = AppError.dbError(description: error.localizedDescription)
+        }
+    }
+    
+    private func onUpscale(image: CGImage) {
+        guard let endpoint = upscalerEndpoints.first else {
+            return
+        }
+        let model = RealEsrgan(endpoint: endpoint)
+        Task {
+            do {
+                status = "Upscaling..."
+                generationState = .running(image)
+                let result = try await model.upscale(image: image)
+                generationState = .complete(result)
+                status = "Upscale successfully"
+            } catch {
+                errorBinding.appError = AppError.dbError(description: error.localizedDescription)
+                status = "Upscale failed."
+                generationState = .failed
+            }
+        }
+        
     }
     
 }
@@ -251,8 +303,8 @@ struct ImageGenerateView: View {
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: Endpoint.self, configurations: config)
-    container.mainContext.insert(Endpoint(name: "qwen7b", modelFamily: .sd))
-    container.mainContext.insert(Endpoint(name: "qwen7b", modelFamily: .sd))
+    container.mainContext.insert(Endpoint(name: "qwen7b", modelFamily: .diffusers))
+    container.mainContext.insert(Endpoint(name: "qwen7b", modelFamily: .diffusers))
     EndpointService.shared.configure(with: container.mainContext)
     
     return ImageGenerateView()

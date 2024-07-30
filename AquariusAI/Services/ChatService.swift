@@ -15,13 +15,9 @@ class ChatService: BaseService {
     private override init() {}
     
     func fetch() async throws -> [Chat] {
-        print(1)
         ModelsContainer.shared.clearChats()
-        print(2)
         let descriptor = FetchDescriptor<Chat>()
-        print(3)
         let chats = try modelContext.fetch(descriptor)
-        print(chats)
         if !chats.isEmpty {
             for chat in chats {
                 ModelsContainer.shared.addChat(chat)

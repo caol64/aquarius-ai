@@ -1,5 +1,5 @@
 //
-//  ModelPicker.swift
+//  EndpointPicker.swift
 //  AquariusAI
 //
 //  Created by Lei Cao on 2024/7/25.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ModelPicker: View {
+struct EndpointPicker: View {
     @Environment(ErrorBinding.self) private var errorBinding
     @Binding var endpoint: Endpoint?
     @State private var endpoints: [Endpoint] = []

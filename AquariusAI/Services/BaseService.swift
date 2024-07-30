@@ -5,7 +5,6 @@
 //  Created by Lei Cao on 2024/7/25.
 //
 
-import Foundation
 import SwiftData
 
 class BaseService {

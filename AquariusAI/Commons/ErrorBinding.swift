@@ -5,7 +5,6 @@
 //  Created by Lei Cao on 2024/7/23.
 //
 
-import Foundation
 import SwiftUI
 
 @Observable

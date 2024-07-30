@@ -1,5 +1,5 @@
 //
-//  ModelsEditor.swift
+//  EndpointsEditor.swift
 //  AquariusAI
 //
 //  Created by Lei Cao on 2024/7/24.
@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct ModelsEditor: View {
+struct EndpointsEditor: View {
     @Environment(ErrorBinding.self) private var errorBinding
     @State private var showFileImporter: Bool = false
     @State private var remoteModels: [String] = []
@@ -23,7 +23,7 @@ struct ModelsEditor: View {
                         .padding(.top, 4)
                 }
                 
-                if !endpoint.modelFamily.isLocalFile {
+                if !endpoint.modelFamily.isLocal {
                     HStack(alignment: .bottom) {
                         TextField("Host", text: $endpoint.host)
                             .padding(.top, 4)
@@ -53,7 +53,7 @@ struct ModelsEditor: View {
                         Button("Select...") {
                             showFileImporter = true
                         }
-                        .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.folder]) { result in
+                        .fileImporter(isPresented: $showFileImporter, allowedContentTypes: endpoint.modelFamily.isLocalFolder ? [.folder]: [.mlmodel, .mlmodelc]) { result in
                             switch result {
                             case .success(let directory):
                                 endpoint.endpoint = directory.path()
@@ -62,7 +62,7 @@ struct ModelsEditor: View {
                                 if !gotAccess {
                                     errorBinding.appError = AppError.directoryNotReadable(path: directory.path())
                                 }
-                                saveBookmarkData(for: directory, id: endpoint.id)
+                                saveBookmarkData(for: directory, endpoint: endpoint)
                                 directory.stopAccessingSecurityScopedResource()
                             case .failure(let error):
                                 errorBinding.appError = AppError.unexpected(description: error.localizedDescription)

@@ -26,7 +26,7 @@ struct TextMessage: View {
             .frame(maxWidth: .infinity, alignment: message.isAssistant() ? .leading : .trailing)
             
             if message.isAssistant() {
-                HStack(alignment: .center, spacing: 8) {
+                HStack(spacing: 8) {
                     Button(action: onCopy) {
                         Image(systemName: isCopied ? "checkmark" : "clipboard")
                     }
@@ -44,6 +44,7 @@ struct TextMessage: View {
                     //                .visible(if: isRegenerateButtonVisible)
                 }
                 .padding(.top, 8)
+                .leftAligned()
                 
                 Divider()
             }

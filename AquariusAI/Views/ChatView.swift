@@ -28,7 +28,7 @@ struct ChatView: View {
                 sidebar()
                 Spacer()
                 Divider()
-                ModelPicker(endpoint: $endpoint, modelFamily: .ollama)
+                EndpointPicker(endpoint: $endpoint, modelFamily: .ollama)
                     .padding(.top, 8)
                 
                 AgentPicker(agent: $agent)
@@ -38,7 +38,7 @@ struct ChatView: View {
             .navigationSplitViewColumnWidth(300)
         } detail: {
             if let chat = selectedChat {
-                VStack {
+                VStack(spacing: 0) {
                     chatArea(chat: chat)
                     chatInputArea()
                 }
@@ -98,8 +98,8 @@ struct ChatView: View {
 
         }
         .background(.white)
-        .navigationTitle(chat.name)
-        .navigationSubtitle("\(endpoint?.name ?? ""):\(agent?.name ?? "")")
+        .navigationTitle(agent?.name ?? "")
+        .navigationSubtitle(endpoint?.name ?? "")
         .toolbar {
             ToolbarItemGroup {
                 Button("Edit", systemImage: "pencil.line") {
@@ -116,37 +116,36 @@ struct ChatView: View {
     }
     
     private func chatInputArea() -> some View {
-        VStack {
+        VStack(spacing: 0)  {
             HStack {
-                TextField("Enter Your Message", text: $prompt, axis: .vertical)
+                TextField("", text: $prompt, axis: .vertical)
                     .font(.system(size: 14))
                     .opacity(0)
                     .lineLimit(1...8)
-                    .padding(.horizontal, 8)
                     .overlay {
                         ZStack {
                             TextEditor(text: $prompt)
                                 .font(.system(size: 14))
                                 .scrollIndicators(.never)
-                                .padding(.horizontal, 8)
                                 .focused($isFocused)
                                 .onAppear() {
                                     keyboardSubscribe()
                                 }
 
                             if prompt.isEmpty {
-                                Text(" Enter Your Message")
+                                Text("Enter Your Message")
+                                    .font(.system(size: 14))
                                     .foregroundStyle(.tertiary)
                                     .padding(.leading, 8)
                                     .leftAligned()
-                                    .topAligned()
+//                                    .topAligned()
                             }
                         }
                     }
                 VStack {
                     if !isChatting {
                         Button(action: onSend) {
-                            Image(systemName: "arrow.up.circle.fill")
+                            Image(systemName: "paperplane.circle.fill")
                                 .resizable()
                                 .frame(width: 20, height: 20)
                         }
@@ -162,9 +161,8 @@ struct ChatView: View {
                 }
             }
 
-            Spacer()
-                .frame(height: 8)
         }
+        .padding(8)
     }
     
     private func chattingArea() -> some View {
