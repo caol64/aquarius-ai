@@ -15,11 +15,11 @@ struct AppMenu: View {
         Button("Chat") {
             openChat()
         }
-        Button("Image") {
-            openImageGenerate()
-        }
-        Button("Generate") {
+        Button("Text Generation") {
             openTextGenerate()
+        }
+        Button("Image Generation") {
+            openImageGenerate()
         }
         
         Divider()

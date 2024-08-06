@@ -76,8 +76,6 @@ struct TextMessage: View {
 
 // MARK: - Preview
 #Preview {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Message.self, configurations: config)
     let message = Message(chatId: "0", content: "hi", sequence: 0, role: Role.user)
 //    let message = Message(chatId: "0", content: "Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.", sequence: 0, role: Role.assistant)
     

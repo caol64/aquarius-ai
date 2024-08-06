@@ -9,13 +9,18 @@ import SwiftData
 
 class BaseService {
     private(set) var _modelContext: ModelContext?
+    private(set) var _errorBinding: ErrorBinding?
 
-    func configure(with modelContext: ModelContext) {
+    func configure(modelContext: ModelContext, errorBinding: ErrorBinding) {
         self._modelContext = modelContext
+        self._errorBinding = errorBinding
     }
     
     var modelContext: ModelContext {
         return _modelContext!
     }
     
+    var errorBinding: ErrorBinding {
+        return _errorBinding!
+    }
 }

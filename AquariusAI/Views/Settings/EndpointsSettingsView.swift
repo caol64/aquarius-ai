@@ -9,13 +9,10 @@ import SwiftUI
 import SwiftData
 
 struct EndpointsSettingsView: View {
-    @Environment(ErrorBinding.self) private var errorBinding
     @State private var showConfirmView = false
-    @State private var selectedModelFamily: ModelFamily = .diffusers
-    @State private var endpoints: [Endpoint] = []
+    @State private var selectedModelFamily: ModelFamily = .ollama
     @State private var selectedEndpoint: Endpoint?
-    private let endpointService = EndpointService.shared
-    
+    @State private var endpointViewModel = EndpointViewModel.shared
     
     var body: some View {
         VStack {
@@ -26,29 +23,26 @@ struct EndpointsSettingsView: View {
                 }
             }
             .onChange(of: selectedModelFamily) {
-                Task {
-                    await onFetch()
-                }
+                onChange()
             }
             .pickerStyle(.segmented)
             
-            if endpoints.isEmpty {
-                VStack {
-                    Text("Please add some models first.")
-                        .padding(.top, 4)
-                        .font(.title)
-                    
+            if endpointViewModel.fetch(modelFamily: selectedModelFamily).isEmpty {
+                Spacer()
+                ContentUnavailableView {
+                    Label("Here is utterly empty.", systemImage: "tray.fill")
+                } description: {
                     Button("Add Model") {
                         onAdd(selectedModelFamily)
                     }
                 }
-                .frame(width: 840, height: 480)
+                Spacer()
             } else {
                 HStack {
                     VStack(spacing: 0) {
                         List(selection: $selectedEndpoint) {
                             Section(header: Text("Models")) {
-                                ForEach(endpoints) { model in
+                                ForEach(endpointViewModel.fetch(modelFamily: selectedModelFamily)) { model in
                                     Label(model.name, systemImage: "cube")
                                         .tag(model)
                                 }
@@ -76,22 +70,23 @@ struct EndpointsSettingsView: View {
                         .background(Color.white)
                         
                     }
-                    .frame(width: 200, height: 480)
+                    .frame(width: 240)
                     
-                    if let endpoint = selectedEndpoint {
-                        EndpointsEditor(endpoint: endpoint)
-                            .frame(width: 640, height: 480)
-                    } else {
-                        ContentUnavailableView {
-                            Text("No Model Selected")
+                    VStack {
+                        if let endpoint = selectedEndpoint {
+                            EndpointsEditor(endpoint: endpoint)
+                        } else {
+                            ContentUnavailableView {
+                                Text("No Model Selected")
+                            }
                         }
-                        .frame(width: 640, height: 480)
                     }
+                    .frame(width: 640)
                 }
             }
         }
         .task {
-            await onFetch()
+            await endpointViewModel.fetch()
         }
     }
     
@@ -99,8 +94,8 @@ struct EndpointsSettingsView: View {
     private func onAdd(_ modelFamily: ModelFamily) {
         let endpoint = Endpoint(name: "new model", modelFamily: selectedModelFamily)
         Task {
-            await endpointService.save(endpoint)
-            await onFetch(selected: endpoint)
+            await endpointViewModel.save(endpoint)
+            onChange(selected: endpoint)
         }
     }
     
@@ -113,36 +108,32 @@ struct EndpointsSettingsView: View {
     private func onDelete() {
         if let selectedEndpoint = selectedEndpoint {
             Task {
-                await endpointService.delete(selectedEndpoint)
-                await onFetch()
+                await endpointViewModel.delete(selectedEndpoint)
+                onChange()
             }
         }
     }
     
-    private func onFetch(selected: Endpoint? = nil) async {
-        do {
-            endpoints = try await endpointService.fetch(modelFamily: selectedModelFamily)
-            if selected != nil {
-                selectedEndpoint = selected
-            } else if !endpoints.isEmpty {
+    private func onChange(selected: Endpoint? = nil) {
+        if selected != nil {
+            selectedEndpoint = selected
+        } else {
+            let endpoints = endpointViewModel.fetch(modelFamily: selectedModelFamily)
+            if !endpoints.isEmpty {
                 selectedEndpoint = endpoints.first
             }
-        } catch {
-            errorBinding.appError = AppError.dbError(description: error.localizedDescription)
-            print(error)
         }
     }
-    
 }
-
 
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: Endpoint.self, configurations: config)
     container.mainContext.insert(Endpoint(name: "sd3", modelFamily: .diffusers))
     container.mainContext.insert(Endpoint(name: "qwen7b", modelFamily: .ollama))
-    EndpointService.shared.configure(with: container.mainContext)
+    let errorBinding = ErrorBinding()
+    EndpointViewModel.shared.configure(modelContext: container.mainContext, errorBinding: errorBinding)
     
     return EndpointsSettingsView()
-        .environment(ErrorBinding())
+        .environment(errorBinding)
 }

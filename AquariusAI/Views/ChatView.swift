@@ -11,107 +11,93 @@ import MarkdownUI
 
 struct ChatView: View {
     @Environment(ErrorBinding.self) private var errorBinding
-    @State private var chats: [Chat] = []
     @State private var messages: [Message] = []
-    @State private var selectedChat: Chat?
+    @State private var chat: Chat = Chat(name: "New Chat")
+    @State private var selectedEndpoint: Endpoint?
     @State private var showConfirmView = false
-    @State private var endpoint: Endpoint?
-    @State private var agent: Agent?
     @State private var prompt: String = ""
-    @FocusState private var isFocused: Bool
     @State private var isChatting = false
     @State private var chattingMessage = ""
+    @State private var showEndpointPicker = false
+    @State private var config: OllamaConfig = OllamaConfig()
+    @State private var systemPrompt: String = OllamaConfig.defaultSystemPrompt
+    @FocusState private var isFocused: Bool
+    @State private var keyDownMonitor: Any?
+    private var modelFamily: ModelFamily = .ollama
+    private let title = "Text Generation"
     
     var body: some View {
         NavigationSplitView {
-            VStack(alignment: .leading) {
-                sidebar()
-                Spacer()
-                Divider()
-                EndpointPicker(endpoint: $endpoint, modelFamily: .ollama)
-                    .padding(.top, 8)
-                
-                AgentPicker(agent: $agent)
-                    .padding(.top, 8)
+            VStack {
+                Label("Agent Options", systemImage: "gearshape.2.fill")
+                    .font(.system(size: 12, weight: .bold, design: .default))
+                    .leftAligned()
+                ScrollView {
+                    Text("Role")
+                        .leftAligned()
+                    TextEditor(text: $systemPrompt)
+                        .padding(.top, 4)
+                        .frame(height: 80)
+                        .font(.body)
+                    GenerationParameterGroup(config: $config)
+                        .padding(.trailing, 16)
+                }
             }
-            .padding()
+            .topAligned()
+            .padding(.leading, 16)
             .navigationSplitViewColumnWidth(300)
         } detail: {
-            if let chat = selectedChat {
-                VStack(spacing: 0) {
-                    chatArea(chat: chat)
-                    chatInputArea()
-                }
-            } else {
-                ContentUnavailableView {
-                    Text("How are you today?")
-                }
+            VStack(spacing: 0) {
+                chatArea()
+                chatInputArea()
+            }
+            .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
+        }
+        .onTapGesture {
+            if showEndpointPicker {
+                showEndpointPicker = false
             }
         }
         .onDisappear {
-            print("onDisappear")
-        }
-    }
-    
-    private func sidebar() -> some View {
-        VStack {
-            List(chats, selection: $selectedChat) { chat in
-                Label(chat.name, systemImage: "bubble")
-                    .tag(chat)
-            }
-            .alert(Text("Are you sure you want to delete the chat?"), isPresented: $showConfirmView) {
-                Button("Delete", role: .destructive) {
-                    onDelete()
-                }
-            }
-            .onChange(of: selectedChat) {
-                if let chat = selectedChat {
-                    onMessageFetch(chat: chat)
-                }
-            }
-        }
-        .toolbar {
-            ToolbarItemGroup {
-                Spacer()
-                Button("New Chat", systemImage: "square.and.pencil") {
-                    onAdd()
-                }
-            }
+            removeKeyboardSubscribe()
         }
         .task {
-            await onFetch()
+            onMessageFetch(chat: chat)
         }
+        .frame(minHeight: 580)
     }
     
-    private func chatArea(chat: Chat) -> some View {
+    private func chatArea() -> some View {
         ScrollView {
             LazyVStack {
                 ForEach(messages, id: \.self.id) { message in
                     TextMessage(message: message)
                 }
-
+                
                 if isChatting {
                     chattingArea()
                 }
             }
             .padding()
-
+            
         }
         .background(.white)
-        .navigationTitle(agent?.name ?? "")
-        .navigationSubtitle(endpoint?.name ?? "")
+        .navigationTitle("")
         .toolbar {
+            EndpointToolbar(endpoint: $selectedEndpoint, showEndpointPicker: $showEndpointPicker, title: title, modelFamily: modelFamily)
             ToolbarItemGroup {
                 Button("Edit", systemImage: "pencil.line") {
-
+                    
                 }
                 Button("Delete", systemImage: "trash") {
-
+                    
                 }
             }
         }
-        .onChange(of: selectedChat) {
-
+        .overlay(alignment: .top) {
+            if showEndpointPicker {
+                EndpointsList(endpoint: $selectedEndpoint, modelFamily: modelFamily)
+            }
         }
     }
     
@@ -128,17 +114,20 @@ struct ChatView: View {
                                 .font(.system(size: 14))
                                 .scrollIndicators(.never)
                                 .focused($isFocused)
-                                .onAppear() {
-                                    keyboardSubscribe()
+                                .onChange(of: isFocused) {
+                                    if isFocused {
+                                        keyboardSubscribe()
+                                    } else {
+                                        removeKeyboardSubscribe()
+                                    }
                                 }
-
                             if prompt.isEmpty {
                                 Text("Enter Your Message")
                                     .font(.system(size: 14))
                                     .foregroundStyle(.tertiary)
                                     .padding(.leading, 8)
                                     .leftAligned()
-//                                    .topAligned()
+                                    .allowsHitTesting(false)
                             }
                         }
                     }
@@ -149,18 +138,21 @@ struct ChatView: View {
                                 .resizable()
                                 .frame(width: 20, height: 20)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.borderedProminent)
+                        .clipShape(.circle)
                     } else {
                         Button(action: onStop) {
                             Image(systemName: "stop.circle.fill")
                                 .resizable()
                                 .frame(width: 20, height: 20)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(.borderedProminent)
+                        .clipShape(.circle)
+                        .tint(.red)
                     }
                 }
             }
-
+            
         }
         .padding(8)
     }
@@ -176,28 +168,6 @@ struct ChatView: View {
     }
     
     // MARK: - Actions
-    private func onFetch() async {
-        do {
-            chats = try await ChatService.shared.fetch()
-        } catch {
-            errorBinding.appError = AppError.dbError(description: error.localizedDescription)
-        }
-        if !chats.isEmpty {
-            selectedChat = chats.first
-        }
-    }
-    
-    private func onAdd() {
-        let chat = Chat(name: "new chat")
-        ChatService.shared.addChat(chat)
-        chats = ChatService.shared.fetchCache()
-        selectedChat = chat
-    }
-    
-    private func onDelete() {
-
-    }
-    
     private func onMessageFetch(chat: Chat) {
         messages = ChatService.shared.fetchMessageCache(chat)
     }
@@ -206,16 +176,8 @@ struct ChatView: View {
         if prompt.isEmpty {
             return
         }
-        guard let chat = selectedChat else {
-            errorBinding.appError = AppError.missingChat
-            return
-        }
-        guard let endpoint = endpoint  else {
+        guard let endpoint = selectedEndpoint  else {
             errorBinding.appError = AppError.missingModel
-            return
-        }
-        guard let agent = agent  else {
-            errorBinding.appError = AppError.missingAgentModel
             return
         }
         isChatting = true
@@ -224,7 +186,7 @@ struct ChatView: View {
         ChatService.shared.addMessage(userMessage, chat: chat)
         messages.append(userMessage)
         Task {
-            try await OllamaService.shared.callCompletionApi(messages: messages, endpoint: endpoint, agent: agent) { response in
+            try await OllamaService.shared.callCompletionApi(messages: messages, systemPrompt: systemPrompt, endpoint: endpoint, config: config) { response in
                 self.chattingMessage += (response.message?.content ?? "")
             } onComplete: { data in
                 isChatting = false
@@ -238,14 +200,14 @@ struct ChatView: View {
             }
         }
     }
-
+    
     private func onStop() {
-
+        
     }
     
     // MARK: - keyboardSubscribe
-    func keyboardSubscribe() {
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { (aEvent) -> NSEvent? in
+    private func keyboardSubscribe() {
+        keyDownMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { (aEvent) -> NSEvent? in
             /// shift + enter, see https://gist.github.com/swillits/df648e87016772c7f7e5dbed2b345066
             if aEvent.modifierFlags.contains(.shift) && aEvent.keyCode == 0x24 {
                 prompt += "\n"
@@ -254,8 +216,13 @@ struct ChatView: View {
                 onSend()
                 return nil
             }
-
             return aEvent
+        }
+    }
+    
+    private func removeKeyboardSubscribe() {
+        if let monitor = keyDownMonitor {
+            NSEvent.removeMonitor(monitor)
         }
     }
 }
@@ -263,22 +230,17 @@ struct ChatView: View {
 // MARK: - Preview
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Schema([Chat.self, Message.self, Endpoint.self, Agent.self]), configurations: config)
-    let chat1 = Chat(name: "new chat1")
-    let chat2 = Chat(name: "new chat2")
-    container.mainContext.insert(chat1)
-    container.mainContext.insert(chat2)
-    container.mainContext.insert(Message(chatId: chat1.id, content: "hi", sequence: 0, role: Role.user))
-    container.mainContext.insert(Message(chatId: chat1.id, content: "Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.", sequence: 1, role: Role.assistant))
-    container.mainContext.insert(Message(chatId: chat1.id, content: "Thank you!", sequence:2, role: Role.user))
+    let container = try! ModelContainer(for: Schema([Endpoint.self]), configurations: config)
+    let chat = Chat(name: "new chat")
+    ChatService.shared.addMessage(Message(chatId: chat.id, content: "hi", sequence: 0, role: Role.user), chat: chat)
+    ChatService.shared.addMessage(Message(chatId: chat.id, content: "Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.", sequence: 1, role: Role.assistant), chat: chat)
+    ChatService.shared.addMessage(Message(chatId: chat.id, content: "Thank you!", sequence:2, role: Role.user), chat: chat)
     var endpoint = Endpoint(name: "qwen7b", modelFamily: .ollama)
     endpoint.endpoint = "qwen2:1.5b-instruct-q5_K_M"
     container.mainContext.insert(endpoint)
-    container.mainContext.insert(Agent(name: "Aquarius"))
-    EndpointService.shared.configure(with: container.mainContext)
-    AgentService.shared.configure(with: container.mainContext)
-    ChatService.shared.configure(with: container.mainContext)
-
+    let errorBinding = ErrorBinding()
+    EndpointViewModel.shared.configure(modelContext: container.mainContext, errorBinding: errorBinding)
+    
     return ChatView()
-        .environment(ErrorBinding())
+        .environment(errorBinding)
 }

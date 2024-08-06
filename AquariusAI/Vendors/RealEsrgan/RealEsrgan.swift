@@ -24,7 +24,9 @@ class RealEsrgan {
     func upscale(image: CGImage) async throws -> CGImage {
         var modelDirectory: URL?
         if let data = endpoint.bookmark {
-            modelDirectory = restoreFileAccess(with: data, endpoint: endpoint)
+            modelDirectory = restoreFileAccess(with: data) { data in
+                endpoint.bookmark = data
+            }
         }
         guard let directory = modelDirectory else {
             throw AppError.bizError(description: "The model path is invalid, please check it in settings.")

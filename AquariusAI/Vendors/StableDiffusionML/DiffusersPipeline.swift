@@ -60,7 +60,9 @@ class DiffusersPipeline {
         let startTime = Date()
         var modelDirectory: URL?
         if let data = endpoint.bookmark {
-            modelDirectory = restoreFileAccess(with: data, endpoint: endpoint)
+            modelDirectory = restoreFileAccess(with: data) { data in
+                endpoint.bookmark = data
+            }
         }
         guard let directory = modelDirectory else {
             throw AppError.bizError(description: "The model path is invalid, please check it in settings.")
@@ -78,7 +80,7 @@ class DiffusersPipeline {
         print("start generate")
         canceled = false
         let stepCount: Int = diffusersConfig.stepCount
-        let cfgScale: Float = diffusersConfig.cfgScale
+        let cfgScale: Float = Float(diffusersConfig.cfgScale)
         var pipelineConfig = diffusersConfig.isXL ? StableDiffusionXLPipeline.Configuration(prompt: prompt) : StableDiffusionPipeline.Configuration(prompt: prompt)
         
         pipelineConfig.negativePrompt = negativePrompt

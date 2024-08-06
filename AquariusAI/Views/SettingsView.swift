@@ -8,21 +8,29 @@
 import SwiftUI
 
 struct SettingsView: View {
-    private enum Tabs: String, Hashable {
-        case endpoints, agents
+    private enum Tabs: String {
+        case models, plugins, knowledges
     }
     var body: some View {
         TabView {
             EndpointsSettingsView()
                 .tabItem {
-                    Label(Tabs.endpoints.rawValue.capitalized, systemImage: "gear")
+                    Label(Tabs.models.rawValue.capitalized, systemImage: "square.stack.3d.forward.dottedline")
                 }
-                .tag(Tabs.endpoints)
-            AgentsSettingsView()
+                .tag(Tabs.models)
+                .frame(width: 880, height: 480)
+            PluginsSettingsView()
                 .tabItem {
-                    Label(Tabs.agents.rawValue.capitalized, systemImage: "star")
+                    Label(Tabs.plugins.rawValue.capitalized, systemImage: "gearshape.2")
                 }
-                .tag(Tabs.agents)
+                .tag(Tabs.plugins)
+                .frame(width: 880, height: 480)
+            KnowledgeSettingsView()
+                .tabItem {
+                    Label(Tabs.knowledges.rawValue.capitalized, systemImage: "graduationcap")
+                }
+                .tag(Tabs.plugins)
+                .frame(width: 880, height: 480)
         }
         .padding()
     }

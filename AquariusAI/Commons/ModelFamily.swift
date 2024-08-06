@@ -8,31 +8,31 @@
 import Foundation
 
 enum ModelFamily: String, CaseIterable, Identifiable, Codable {
-    case upscaler
-    case ollama
-    case openai
-    case gemini
-    case diffusers
+    case ollama = "Ollama"
+    case gpt = "GPT"
+    case gemini = "Gemini"
+    case diffusers = "Diffusers"
+    case mlmodel = "MLModel"
     
     var id: Self { self }
     
     var host: String {
         switch self {
-        case .upscaler: return "file://"
         case .ollama: return "http://127.0.0.1:11434"
-        case .openai: return "https://openai.com"
+        case .gpt: return "https://openai.com"
         case .gemini: return "https://generativelanguage.googleapis.com"
         case .diffusers: return "folder://"
+        case .mlmodel: return "file://"
         }
     }
     
     var needAppKey: Bool {
         switch self {
-        case .upscaler: return false
         case .ollama: return false
-        case .openai: return true
+        case .gpt: return true
         case .gemini: return true
         case .diffusers: return false
+        case .mlmodel: return false
         }
     }
     

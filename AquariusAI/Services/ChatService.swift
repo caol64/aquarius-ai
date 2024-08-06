@@ -14,30 +14,30 @@ class ChatService: BaseService {
     
     private override init() {}
     
-    func fetch() async throws -> [Chat] {
-        ModelsContainer.shared.clearChats()
-        let descriptor = FetchDescriptor<Chat>()
-        let chats = try modelContext.fetch(descriptor)
-        if !chats.isEmpty {
-            for chat in chats {
-                ModelsContainer.shared.addChat(chat)
-                ModelsContainer.shared.addMessages(try fetchMessage(chat), chat: chat)
-            }
-        }
-        return ModelsContainer.shared.allChats()
-    }
-    
-    private func fetchMessage(_ chat: Chat) throws -> [Message] {
-        let chatId: String = chat.id
-        let descriptor = FetchDescriptor<Message>(
-            predicate: #Predicate<Message> { data in
-                data.chatId == chatId
-            },
-            sortBy: [SortDescriptor(\Message.createdAt, order: .forward)]
-        )
-        let messages = try modelContext.fetch(descriptor)
-        return messages
-    }
+//    func fetch() async throws -> [Chat] {
+//        ModelsContainer.shared.clearChats()
+//        let descriptor = FetchDescriptor<Chat>()
+//        let chats = try modelContext.fetch(descriptor)
+//        if !chats.isEmpty {
+//            for chat in chats {
+//                ModelsContainer.shared.addChat(chat)
+//                ModelsContainer.shared.addMessages(try fetchMessage(chat), chat: chat)
+//            }
+//        }
+//        return ModelsContainer.shared.allChats()
+//    }
+//    
+//    private func fetchMessage(_ chat: Chat) throws -> [Message] {
+//        let chatId: String = chat.id
+//        let descriptor = FetchDescriptor<Message>(
+//            predicate: #Predicate<Message> { data in
+//                data.chatId == chatId
+//            },
+//            sortBy: [SortDescriptor(\Message.createdAt, order: .forward)]
+//        )
+//        let messages = try modelContext.fetch(descriptor)
+//        return messages
+//    }
     
     func fetchCache() -> [Chat] {
         return ModelsContainer.shared.allChats()

@@ -16,7 +16,7 @@ struct EndpointsEditor: View {
     var body: some View {
         VStack {
             Form {
-                TextField("Model Name", text: $endpoint.name)
+                TextField("Name", text: $endpoint.name)
                 
                 if endpoint.modelFamily.needAppKey {
                     TextField("AppKey", text: $endpoint.appkey)
@@ -62,7 +62,11 @@ struct EndpointsEditor: View {
                                 if !gotAccess {
                                     errorBinding.appError = AppError.directoryNotReadable(path: directory.path())
                                 }
-                                saveBookmarkData(for: directory, endpoint: endpoint)
+                                do {
+                                    endpoint.bookmark = try createBookmarkData(for: directory)
+                                } catch {
+                                    errorBinding.appError = AppError.unexpected(description: error.localizedDescription)
+                                }
                                 directory.stopAccessingSecurityScopedResource()
                             case .failure(let error):
                                 errorBinding.appError = AppError.unexpected(description: error.localizedDescription)

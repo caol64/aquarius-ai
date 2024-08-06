@@ -14,10 +14,11 @@ struct AquariusAIApp: App {
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Agent.self,
             Endpoint.self,
-            Chat.self,
-            Message.self,
+            Plugin.self,
+            Knowledge.self,
+//            Chat.self,
+//            Message.self,
         ])
 
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
@@ -30,13 +31,13 @@ struct AquariusAIApp: App {
     }()
     
     init() {
-        
         let modelContext = sharedModelContainer.mainContext
-        
-        EndpointService.shared.configure(with: modelContext)
-        AgentService.shared.configure(with: modelContext)
-        ChatService.shared.configure(with: modelContext)
-        
+        EndpointViewModel.shared.configure(modelContext: modelContext, errorBinding: errorBinding)
+        KnowledgeViewModel.shared.configure(modelContext: modelContext, errorBinding: errorBinding)
+        PluginViewModel.shared.configure(modelContext: modelContext, errorBinding: errorBinding)
+        Task {
+            await EndpointViewModel.shared.fetch()
+        }
     }
 
     var body: some Scene {
@@ -44,35 +45,30 @@ struct AquariusAIApp: App {
         MenuBarExtra("Aquarius AI", systemImage: "hammer") {
             AppMenu()
         }
-        .modelContainer(sharedModelContainer)
 
         Settings {
             SettingsView()
                 .environment(errorBinding)
                 .alert(isPresented: errorBinding.showError, error: errorBinding.appError) {}
         }
-        .modelContainer(sharedModelContainer)
         #endif
         
         WindowGroup(id: "textGenerate") {
-            TextGenerateView()
+            TextGenerationView()
                 .environment(errorBinding)
                 .alert(isPresented: errorBinding.showError, error: errorBinding.appError) {}
         }
-        .modelContainer(sharedModelContainer)
         
         WindowGroup(id: "chat") {
             ChatView()
                 .environment(errorBinding)
                 .alert(isPresented: errorBinding.showError, error: errorBinding.appError) {}
         }
-        .modelContainer(sharedModelContainer)
         
         WindowGroup(id: "imageGenerate") {
-            ImageGenerateView()
+            ImageGenerationView()
                 .environment(errorBinding)
                 .alert(isPresented: errorBinding.showError, error: errorBinding.appError) {}
         }
-        .modelContainer(sharedModelContainer)
     }
 }

@@ -35,3 +35,9 @@ class Endpoint: Identifiable {
         }
     }
 }
+
+extension Array where Element == Endpoint {
+    func grouped() -> [String: [Endpoint]] {
+        Dictionary(grouping: self) { $0.family }
+    }
+}

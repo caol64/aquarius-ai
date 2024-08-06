@@ -7,9 +7,8 @@
 
 import SwiftUI
 
-func genrateOptions() -> some View {
+func generationOptions() -> some View {
     Label("Genaration Options", systemImage: "gearshape.2.fill")
         .font(.system(size: 12, weight: .bold, design: .default))
         .leftAligned()
 }
-
