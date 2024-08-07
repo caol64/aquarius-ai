@@ -17,6 +17,8 @@ struct TextGenerationView: View {
     @State private var response: String = ""
     @State private var showEndpointPicker = false
     @State private var config: OllamaConfig = OllamaConfig()
+    @State private var knowledge: Knowledge?
+    @State private var expandId: String?
     private let modelFamily: ModelFamily = .ollama
     private let title = "Text Generation"
     
@@ -26,7 +28,9 @@ struct TextGenerationView: View {
                 generationOptions()
                 ScrollView {
                     prompts()
-                    GenerationParameterGroup(config: $config)
+                    KnowledgeSettingGroup(expandId: $expandId, knowledge: $knowledge)
+                        .padding(.trailing, 16)
+                    GenerationParameterGroup(expandId: $expandId, config: $config)
                         .padding(.trailing, 16)
                 }
                 Button("Generate") {

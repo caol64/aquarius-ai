@@ -36,4 +36,17 @@ class KnowledgeViewModel: BaseService {
         await fetch()
     }
     
+    func saveChunks(chunks: [KnowledgeChunk]) async {
+        do {
+            try modelContext.transaction {
+                for chunk in chunks {
+                    modelContext.insert(chunk)
+                }
+                try modelContext.save()
+            }
+        } catch {
+            errorBinding.appError = AppError.dbError(description: error.localizedDescription)
+        }
+    }
+    
 }

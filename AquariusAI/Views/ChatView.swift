@@ -20,6 +20,7 @@ struct ChatView: View {
     @State private var chattingMessage = ""
     @State private var showEndpointPicker = false
     @State private var config: OllamaConfig = OllamaConfig()
+    @State private var expandId: String?
     @State private var systemPrompt: String = OllamaConfig.defaultSystemPrompt
     @FocusState private var isFocused: Bool
     @State private var keyDownMonitor: Any?
@@ -39,7 +40,7 @@ struct ChatView: View {
                         .padding(.top, 4)
                         .frame(height: 80)
                         .font(.body)
-                    GenerationParameterGroup(config: $config)
+                    GenerationParameterGroup(expandId: $expandId, config: $config)
                         .padding(.trailing, 16)
                 }
             }

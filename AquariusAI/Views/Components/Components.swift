@@ -12,3 +12,56 @@ func generationOptions() -> some View {
         .font(.system(size: 12, weight: .bold, design: .default))
         .leftAligned()
 }
+
+func exclusiveExpandGroup<T: Equatable>(id: T,
+                                        expandId: Binding<T?>,
+                                        noNeedExpand: Bool = false,
+                                        @ViewBuilder view: @escaping () -> some View,
+                                        @ViewBuilder label: () -> some View) -> some View {
+    return DisclosureGroup(isExpanded: Binding(
+        get: { id == expandId.wrappedValue },
+        set: { isExpanded in
+            expandId.wrappedValue = noNeedExpand ? nil : isExpanded ? id : nil
+        }
+    )) {
+        view()
+    } label: {
+        label()
+    }
+}
+
+func doubleSlideGroup(id: String, expandId: Binding<String?>, setting: Binding<Double>, range: ClosedRange<Double>, step: Double, precision: String) -> some View {
+    exclusiveExpandGroup(id: id, expandId: expandId) {
+        HideStepSlider(value: setting, range: range, step: step)
+    } label: {
+        HStack {
+            Text(id)
+            Spacer()
+            Text(String(String(format: precision, setting.wrappedValue)))
+            Button {
+                
+            } label: {
+                Image(systemName: "info.circle")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}
+
+func intSlideGroup(id: String, expandId: Binding<String?>, setting: Binding<Int>, range: ClosedRange<Double>, step: Double) -> some View {
+    exclusiveExpandGroup(id: id, expandId: expandId) {
+        IntHideStepSlider(value: setting, range: range, step: step)
+    } label: {
+        HStack {
+            Text(id)
+            Spacer()
+            Text(String(setting.wrappedValue))
+            Button {
+                
+            } label: {
+                Image(systemName: "info.circle")
+            }
+            .buttonStyle(.plain)
+        }
+    }
+}

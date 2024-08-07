@@ -66,6 +66,8 @@
 		ABEA00B72C53460D0020C46E /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABEA00B62C53460D0020C46E /* ChatService.swift */; };
 		ABF9E9802C61E75A0034957D /* HideStepSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF9E97F2C61E75A0034957D /* HideStepSlider.swift */; };
 		ABF9E9822C61F0640034957D /* IntHideStepSlider.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF9E9812C61F0640034957D /* IntHideStepSlider.swift */; };
+		ABF9E9862C6229640034957D /* KnowledgeSettingGroup.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF9E9852C6229640034957D /* KnowledgeSettingGroup.swift */; };
+		ABF9E9882C622B250034957D /* KnowledgePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABF9E9872C622B250034957D /* KnowledgePicker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -160,6 +162,8 @@
 		ABEA00B62C53460D0020C46E /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatService.swift; sourceTree = "<group>"; };
 		ABF9E97F2C61E75A0034957D /* HideStepSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HideStepSlider.swift; sourceTree = "<group>"; };
 		ABF9E9812C61F0640034957D /* IntHideStepSlider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntHideStepSlider.swift; sourceTree = "<group>"; };
+		ABF9E9852C6229640034957D /* KnowledgeSettingGroup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgeSettingGroup.swift; sourceTree = "<group>"; };
+		ABF9E9872C622B250034957D /* KnowledgePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KnowledgePicker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -338,6 +342,8 @@
 				AB3DF6CB2C5B7B37007CA0F8 /* GenerationParameterGroup.swift */,
 				ABF9E97F2C61E75A0034957D /* HideStepSlider.swift */,
 				ABF9E9812C61F0640034957D /* IntHideStepSlider.swift */,
+				ABF9E9852C6229640034957D /* KnowledgeSettingGroup.swift */,
+				ABF9E9872C622B250034957D /* KnowledgePicker.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -570,6 +576,7 @@
 				ABC1C1102C4F732A00B579B3 /* TextMessage.swift in Sources */,
 				ABEA00B72C53460D0020C46E /* ChatService.swift in Sources */,
 				AB99B9922C5F741B00033708 /* PluginViewModel.swift in Sources */,
+				ABF9E9862C6229640034957D /* KnowledgeSettingGroup.swift in Sources */,
 				ABC1C1312C4F8E4D00B579B3 /* Endpoint.swift in Sources */,
 				ABC1C0E52C4F730500B579B3 /* ModelFamily.swift in Sources */,
 				ABDE04132C58D1B000A90857 /* PluginsSettingsView.swift in Sources */,
@@ -578,6 +585,7 @@
 				AB3D26A52C5CB92400E4E2A1 /* KnowledgeChunk.swift in Sources */,
 				AB3D26A32C5CB7CD00E4E2A1 /* Knowledge.swift in Sources */,
 				ABB981D62C52389100AD94D9 /* Components.swift in Sources */,
+				ABF9E9882C622B250034957D /* KnowledgePicker.swift in Sources */,
 				AB3D26AB2C5CBCE400E4E2A1 /* KnowledgeEditor.swift in Sources */,
 				ABC1C1132C4F732A00B579B3 /* SettingsView.swift in Sources */,
 				ABEA00B52C5342220020C46E /* NSImage+PngData.swift in Sources */,

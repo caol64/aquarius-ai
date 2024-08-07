@@ -10,7 +10,6 @@ import SwiftData
 
 struct KnowledgeSettingsView: View {
     @Environment(ErrorBinding.self) private var errorBinding
-    @Environment(\.dismiss) private var dismiss
     @State private var showConfirmView = false
     @State private var selectedKnowledge: Knowledge?
     @State private var knowledgeViewModel = KnowledgeViewModel.shared

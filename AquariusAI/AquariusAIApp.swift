@@ -17,6 +17,7 @@ struct AquariusAIApp: App {
             Endpoint.self,
             Plugin.self,
             Knowledge.self,
+            KnowledgeChunk.self,
 //            Chat.self,
 //            Message.self,
         ])

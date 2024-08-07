@@ -36,6 +36,12 @@ class KnowledgeService {
         let savedPath = "knowleges/\(knowledge.id).db"
         try saveFileToDocumentsDirectory(embeddings, to: savedPath)
         knowledge.indexPath = savedPath
+        var knowledgeChunks: [KnowledgeChunk] = []
+        for (i, chunk) in chunks.enumerated() {
+            let knowledgeChunk = KnowledgeChunk(knowledgeId: knowledge.id, content: chunk, index: i)
+            knowledgeChunks.append(knowledgeChunk)
+        }
+        await KnowledgeViewModel.shared.saveChunks(chunks: knowledgeChunks)
         knowledge.knowledgeStatus = .completed
     }
     

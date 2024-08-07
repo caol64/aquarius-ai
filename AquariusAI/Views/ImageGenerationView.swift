@@ -36,7 +36,7 @@ struct ImageGenerationView: View {
     @State private var status: String = ""
     @State private var upscalerEndpoint: Endpoint?
     @State private var showEndpointPicker = false
-    @State private var expandedGroup: Groups?
+    @State private var expandId: String?
     @State private var pluginViewModel = PluginViewModel.shared
     @State private var endpointViewModel = EndpointViewModel.shared
     private var modelFamily: ModelFamily = .diffusers
@@ -141,43 +141,15 @@ struct ImageGenerationView: View {
     }
     
     private func stepGroup(config: Binding<DiffusersConfig>) -> some View {
-        disclosureGroup(group: .steps, view: AnyView(
-            IntHideStepSlider(value: $config.stepCount, range: 1...50, step: 1)
-        ), label: AnyView(
-            HStack {
-                Text(Groups.steps.rawValue.capitalized)
-                Spacer()
-                Text(String(config.wrappedValue.stepCount))
-                Button {
-                    
-                } label: {
-                    Image(systemName: "info.circle")
-                }
-                .buttonStyle(.plain)
-            }
-        ))
+        intSlideGroup(id: Groups.steps.rawValue, expandId: $expandId, setting: $config.stepCount, range: 1...50, step: 1)
     }
     
     private func scaleGroup(config: Binding<DiffusersConfig>) -> some View {
-        disclosureGroup(group: .scale, view: AnyView(
-            HideStepSlider(value: $config.cfgScale, range: 1...30, step: 0.5)
-        ), label: AnyView(
-            HStack {
-                Text(Groups.scale.rawValue)
-                Spacer()
-                Text(String(format: "%.1f", config.wrappedValue.cfgScale))
-                Button {
-                    
-                } label: {
-                    Image(systemName: "info.circle")
-                }
-                .buttonStyle(.plain)
-            }
-        ))
+        doubleSlideGroup(id: Groups.scale.rawValue, expandId: $expandId, setting: $config.cfgScale, range: 1...30, step: 0.5, precision: "%.1f")
     }
     
     private func ratioGroup(config: Binding<DiffusersConfig>) -> some View {
-        disclosureGroup(group: .ratio, view: AnyView(
+        exclusiveExpandGroup(id: Groups.ratio.rawValue, expandId: $expandId) {
             Picker("", selection: $config.imageRatio) {
                 ForEach(ImageRatio.allCases) { ratio in
                     Text(ratio.rawValue)
@@ -185,7 +157,7 @@ struct ImageGenerationView: View {
                 }
             }
             .pickerStyle(SegmentedPickerStyle())
-        ), label: AnyView(
+        } label: {
             HStack {
                 Text(Groups.ratio.rawValue)
                 Spacer()
@@ -197,25 +169,11 @@ struct ImageGenerationView: View {
                 }
                 .buttonStyle(.plain)
             }
-        ))
+        }
     }
     
     private func seedGroup(config: Binding<DiffusersConfig>) -> some View {
-        disclosureGroup(group: .seed, view: AnyView(
-            TextField("", value: $config.seed, format: .number)
-        ), label: AnyView(
-            HStack {
-                Text(Groups.seed.rawValue.capitalized)
-                Spacer()
-                Text(String(config.wrappedValue.seed))
-                Button {
-                    
-                } label: {
-                    Image(systemName: "info.circle")
-                }
-                .buttonStyle(.plain)
-            }
-        ))
+        intSlideGroup(id: Groups.seed.rawValue, expandId: $expandId, setting: $config.seed, range: -1...65535, step: 1)
     }
     
     private func sdxlGroup(config: Binding<DiffusersConfig>) -> some View {
@@ -313,19 +271,6 @@ struct ImageGenerationView: View {
                     print("Failed to save file: \(error.localizedDescription)")
                 }
             }
-        }
-    }
-    
-    private func disclosureGroup(group: Groups, view: any View, label: any View) -> some View {
-        DisclosureGroup(isExpanded: Binding(
-            get: { expandedGroup == group },
-            set: { newValue in
-                expandedGroup = newValue ? group : nil
-            }
-        )) {
-            AnyView(view)
-        } label: {
-            AnyView(label)
         }
     }
     
