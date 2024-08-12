@@ -8,11 +8,11 @@
 import Foundation
 import SwiftData
 
-class ChatService: BaseService {
+class ChatService {
     
     static let shared = ChatService()
     
-    private override init() {}
+    private init() {}
     
 //    func fetch() async throws -> [Chat] {
 //        ModelsContainer.shared.clearChats()
@@ -39,19 +39,19 @@ class ChatService: BaseService {
 //        return messages
 //    }
     
-    func fetchCache() -> [Chat] {
+    func fetchCache() -> [Chats] {
         return ModelsContainer.shared.allChats()
     }
     
-    func addChat(_ chat: Chat) {
+    func addChat(_ chat: Chats) {
         ModelsContainer.shared.addChat(chat)
     }
     
-    func fetchMessageCache(_ chat: Chat) -> [Message] {
+    func fetchMessageCache(_ chat: Chats) -> [Messages] {
         return ModelsContainer.shared.getMessages(chat)
     }
     
-    func addMessage(_ message: Message, chat: Chat) {
+    func addMessage(_ message: Messages, chat: Chats) {
         ModelsContainer.shared.addMessage(message, chat: chat)
     }
     

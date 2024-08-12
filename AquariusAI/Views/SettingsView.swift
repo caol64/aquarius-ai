@@ -13,7 +13,7 @@ struct SettingsView: View {
     }
     var body: some View {
         TabView {
-            EndpointsSettingsView()
+            ModelSettingsView()
                 .tabItem {
                     Label(Tabs.models.rawValue.capitalized, systemImage: "square.stack.3d.forward.dottedline")
                 }

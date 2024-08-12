@@ -11,7 +11,7 @@ import MarkdownUI
 
 struct TextMessage: View {
     
-    let message: Message
+    let message: Messages
     @State private var isCopied = false
     
     var body: some View {
@@ -76,7 +76,7 @@ struct TextMessage: View {
 
 // MARK: - Preview
 #Preview {
-    let message = Message(chatId: "0", content: "hi", sequence: 0, role: Role.user)
+    let message = Messages(chatId: "0", content: "hi", sequence: 0, role: Role.user)
 //    let message = Message(chatId: "0", content: "Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.", sequence: 0, role: Role.assistant)
     
     return TextMessage(message: message)

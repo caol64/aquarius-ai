@@ -10,16 +10,20 @@ import SwiftData
 
 @main
 struct AquariusAIApp: App {
-    @State private var errorBinding: ErrorBinding = ErrorBinding()
+    @State private var appState: AppState
+    private var modelViewModel: ModelViewModel
+    private var knowledgeViewModel: KnowledgeViewModel
+    private var pluginViewModel: PluginViewModel
+    @State private var textGenerationViewModel: TextGenerationViewModel
+    @State private var chatViewModel: ChatViewModel
+    @State private var imageViewModel: ImageViewModel
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Endpoint.self,
-            Plugin.self,
-            Knowledge.self,
-            KnowledgeChunk.self,
-//            Chat.self,
-//            Message.self,
+            Models.self,
+            Plugins.self,
+            Knowledges.self,
+            KnowledgeChunks.self,
         ])
 
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
@@ -33,12 +37,14 @@ struct AquariusAIApp: App {
     
     init() {
         let modelContext = sharedModelContainer.mainContext
-        EndpointViewModel.shared.configure(modelContext: modelContext, errorBinding: errorBinding)
-        KnowledgeViewModel.shared.configure(modelContext: modelContext, errorBinding: errorBinding)
-        PluginViewModel.shared.configure(modelContext: modelContext, errorBinding: errorBinding)
-        Task {
-            await EndpointViewModel.shared.fetch()
-        }
+        let appState = AppState()
+        _appState = State(initialValue: appState)
+        modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
+        knowledgeViewModel = KnowledgeViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
+        pluginViewModel = PluginViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
+        textGenerationViewModel = TextGenerationViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
+        chatViewModel = ChatViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
+        imageViewModel = ImageViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
     }
 
     var body: some Scene {
@@ -49,27 +55,34 @@ struct AquariusAIApp: App {
 
         Settings {
             SettingsView()
-                .environment(errorBinding)
-                .alert(isPresented: errorBinding.showError, error: errorBinding.appError) {}
+                .environment(modelViewModel)
+                .environment(knowledgeViewModel)
+                .environment(pluginViewModel)
+                .alert(isPresented: appState.showSettingsError, error: appState.errorBinding.appError) {}
         }
         #endif
         
-        WindowGroup(id: "textGenerate") {
-            TextGenerationView()
-                .environment(errorBinding)
-                .alert(isPresented: errorBinding.showError, error: errorBinding.appError) {}
+        WindowGroup(id: Page.text.rawValue) {
+            TextGenerationView(viewModel: textGenerationViewModel)
+                .environment(modelViewModel)
+                .environment(knowledgeViewModel)
+                .environment(pluginViewModel)
+                .alert(isPresented: appState.showTextError, error: appState.errorBinding.appError) {}
         }
         
-        WindowGroup(id: "chat") {
-            ChatView()
-                .environment(errorBinding)
-                .alert(isPresented: errorBinding.showError, error: errorBinding.appError) {}
+        WindowGroup(id: Page.chat.rawValue) {
+            ChatView(viewModel: chatViewModel)
+                .environment(modelViewModel)
+                .environment(knowledgeViewModel)
+                .environment(pluginViewModel)
+                .alert(isPresented: appState.showChatError, error: appState.errorBinding.appError) {}
         }
         
-        WindowGroup(id: "imageGenerate") {
-            ImageGenerationView()
-                .environment(errorBinding)
-                .alert(isPresented: errorBinding.showError, error: errorBinding.appError) {}
+        WindowGroup(id: Page.image.rawValue) {
+            ImageGenerationView(viewModel: imageViewModel)
+                .environment(modelViewModel)
+                .environment(pluginViewModel)
+                .alert(isPresented: appState.showImageError, error: appState.errorBinding.appError) {}
         }
     }
 }

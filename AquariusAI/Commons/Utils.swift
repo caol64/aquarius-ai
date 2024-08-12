@@ -140,19 +140,37 @@ func cosineSimilarity(_ vectorA: [Double], _ vectorB: [Double]) throws -> Double
     let dotProduct = zip(vectorA, vectorB).map(*).reduce(0, +)
     let magnitudeA = sqrt(vectorA.map { $0 * $0 }.reduce(0, +))
     let magnitudeB = sqrt(vectorB.map { $0 * $0 }.reduce(0, +))
-    
     return dotProduct / (magnitudeA * magnitudeB)
 }
 
-func mostSimilarVector(queryVector: [Double], vectors: [[Double]]) throws -> (index: Int, similarity: Double) {
-    var maxSimilarity = -1.0
-    var mostSimilarIndex = -1
+func mostSimilarVector(queryVector: [Double], vectors: [[Double]], topK: Int) throws -> [(index: Int, similarity: Double)] {
+    var result: [(index: Int, similarity: Double)] = []
     for (index, vector) in vectors.enumerated() {
         let similarity = try cosineSimilarity(queryVector, vector)
-        if similarity > maxSimilarity {
-            maxSimilarity = similarity
-            mostSimilarIndex = index
-        }
+        result.append((index, similarity))
     }
-    return (mostSimilarIndex, maxSimilarity)
+    result.sort(by: { $0.similarity > $1.similarity })
+    print(result)
+    return Array(result.prefix(topK))
+}
+
+func splitTextIntoChunks(_ text: String, chunkSize: Int) -> [String] {
+    var chunks: [String] = []
+    let lines = text.split(separator: "\n", omittingEmptySubsequences: true)
+    var length = 0
+    var start = 0
+    for (i, line) in zip(lines.indices, lines) {
+        if length + line.count > chunkSize {
+            let array = lines[start...i-1]
+            chunks.append(array.joined(separator: "\n"))
+            start = i
+            length = 0
+        }
+        if i == lines.count - 1 {
+            let array = lines[start...i]
+            chunks.append(array.joined(separator: "\n"))
+        }
+        length += line.count
+    }
+    return chunks
 }

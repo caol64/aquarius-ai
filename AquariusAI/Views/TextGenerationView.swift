@@ -10,111 +10,89 @@ import SwiftData
 import MarkdownUI
 
 struct TextGenerationView: View {
-    @Environment(ErrorBinding.self) private var errorBinding
-    @State private var prompt: String = ""
-    @State private var systemPrompt: String = ""
-    @State private var selectedEndpoint: Endpoint?
-    @State private var response: String = ""
-    @State private var showEndpointPicker = false
-    @State private var config: OllamaConfig = OllamaConfig()
-    @State private var knowledge: Knowledge?
-    @State private var expandId: String?
-    private let modelFamily: ModelFamily = .ollama
-    private let title = "Text Generation"
-    
+    @Bindable var viewModel: TextGenerationViewModel
+    let modelFamily: ModelFamily = .ollama
+    let title = "Text Generation"
+
     var body: some View {
         NavigationSplitView {
-            VStack {
-                generationOptions()
-                ScrollView {
-                    prompts()
-                    KnowledgeSettingGroup(expandId: $expandId, knowledge: $knowledge)
-                        .padding(.trailing, 16)
-                    GenerationParameterGroup(expandId: $expandId, config: $config)
-                        .padding(.trailing, 16)
-                }
-                Button("Generate") {
-                    onGenerate()
-                }
-                .buttonStyle(.borderedProminent)
-                .rightAligned()
-                .padding(.trailing, 16)
-                
-            }
-            .topAligned()
-            .padding(.leading, 16)
-            .navigationSplitViewColumnWidth(300)
+            sidebar
+                .topAligned()
+                .padding(.leading, 16)
+                .navigationSplitViewColumnWidth(300)
         } detail: {
-            ScrollView {
-                Markdown(response)
-                    .textSelection(.enabled)
-                    .topAligned()
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .background(.white)
-            .navigationTitle("")
-            .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
-            .toolbar {
-                EndpointToolbar(endpoint: $selectedEndpoint, showEndpointPicker: $showEndpointPicker, title: title, modelFamily: modelFamily)
-                ToolbarItemGroup {
-                    Button("Copy", systemImage: "clipboard") {
-                        
-                    }
-                }
-            }
-            .overlay(alignment: .top) {
-                if showEndpointPicker {
-                    EndpointsList(endpoint: $selectedEndpoint, modelFamily: modelFamily)
-                }
-            }
+            contentView
+                .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
         }
         .onTapGesture {
-            if showEndpointPicker {
-                showEndpointPicker = false
-            }
+            viewModel.closeModelListPopup()
         }
         .frame(minHeight: 580)
     }
     
-    private func prompts() -> some View {
-        VStack {
-            Text("Prompt")
-                .leftAligned()
-            TextEditor(text: $prompt)
-                .padding(.top, 4)
-                .frame(height: 100)
-                .font(.body)
-            Text("System Prompt")
-                .padding(.top, 4)
-                .leftAligned()
-            TextEditor(text: $systemPrompt)
-                .padding(.top, 4)
-                .frame(height: 80)
-                .font(.body)
+    // MARK: - sidebar
+    @ViewBuilder
+    @MainActor
+    private var sidebar: some View {
+        generationOptions()
+        ScrollView {
+            prompts
+            KnowledgeSetupGroup(expandId: $viewModel.expandId, knowledge: $viewModel.knowledge)
+                .padding(.trailing, 16)
+            GenerationParameterGroup(expandId: $viewModel.expandId, config: $viewModel.config)
+                .padding(.trailing, 16)
+        }
+        Button("Generate") {
+            viewModel.onGenerate()
+        }
+        .buttonStyle(.borderedProminent)
+        .rightAligned()
+        .padding(.trailing, 16)
+    }
+    
+    // MARK: - contentView
+    @MainActor
+    private var contentView: some View {
+        ScrollView {
+            Markdown(viewModel.response)
+                .textSelection(.enabled)
+                .topAligned()
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(.white)
+        .navigationTitle("")
+        .toolbar {
+            ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelFamily: modelFamily)
+            ToolbarItemGroup {
+                Button("Copy", systemImage: "clipboard") {
+                    
+                }
+            }
+        }
+        .overlay(alignment: .top) {
+            if viewModel.showModelPicker {
+                ModelListPopup(model: $viewModel.selectedModel, modelFamily: modelFamily)
+            }
         }
     }
     
-    // MARK: - Actions
-    private func onGenerate() {
-        if prompt.isEmpty {
-            errorBinding.appError = AppError.promptEmpty
-            return
-        }
-        guard let endpoint = selectedEndpoint  else {
-            errorBinding.appError = AppError.missingModel
-            return
-        }
-        response = ""
-        Task {
-            try await OllamaService.shared.callGenerateApi(prompt: prompt, systemPrompt: systemPrompt, endpoint: endpoint, config: config) { response in
-                self.response += response.response
-            } onComplete: { data in
-                
-            } onError: { error in
-                errorBinding.appError = AppError.unexpected(description: error.localizedDescription)
-            }
-        }
+    // MARK: - prompts
+    @ViewBuilder
+    private var prompts: some View {
+        Text("Prompt")
+            .leftAligned()
+        TextEditor(text: $viewModel.prompt)
+            .padding(.top, 4)
+            .frame(height: 100)
+            .font(.body)
+        Text("System Prompt")
+            .padding(.top, 4)
+            .leftAligned()
+        TextEditor(text: $viewModel.systemPrompt)
+            .padding(.top, 4)
+            .frame(height: 80)
+            .font(.body)
     }
 
 }
@@ -122,11 +100,17 @@ struct TextGenerationView: View {
 // MARK: - Preview
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Endpoint.self, configurations: config)
-    container.mainContext.insert(Endpoint(name: "qwen7b", modelFamily: .ollama))
-    let errorBinding = ErrorBinding()
-    EndpointViewModel.shared.configure(modelContext: container.mainContext, errorBinding: errorBinding)
+    let container = try! ModelContainer(for: Models.self, configurations: config)
+    container.mainContext.insert(Models(name: "qwen7b", modelFamily: .ollama))
+    let appState = AppState()
+    let modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
+    let knowledgeViewModel = KnowledgeViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
+    let pluginViewModel = PluginViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
+    @State var viewModel = TextGenerationViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     
-    return TextGenerationView()
-        .environment(errorBinding)
+    return TextGenerationView(viewModel: viewModel)
+        .environment(modelViewModel)
+        .environment(knowledgeViewModel)
+        .environment(pluginViewModel)
+        .environment(viewModel)
 }

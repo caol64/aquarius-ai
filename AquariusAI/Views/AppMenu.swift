@@ -12,13 +12,13 @@ struct AppMenu: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button("Chat") {
+        Button(Page.chat.rawValue.capitalized) {
             openChat()
         }
-        Button("Text Generation") {
+        Button(Page.text.rawValue.capitalized) {
             openTextGenerate()
         }
-        Button("Image Generation") {
+        Button(Page.image.rawValue.capitalized) {
             openImageGenerate()
         }
         
@@ -34,15 +34,15 @@ struct AppMenu: View {
     }
     
     func openChat() {
-        openWindow(id: "chat")
+        openWindow(id: Page.chat.rawValue)
         NSApp.activate(ignoringOtherApps: true)
     }
     func openTextGenerate() {
-        openWindow(id: "textGenerate")
+        openWindow(id: Page.text.rawValue)
         NSApp.activate(ignoringOtherApps: true)
     }
     func openImageGenerate() {
-        openWindow(id: "imageGenerate")
+        openWindow(id: Page.image.rawValue)
         NSApp.activate(ignoringOtherApps: true)
     }
     func quit() {
