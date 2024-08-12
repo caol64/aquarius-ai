@@ -22,22 +22,26 @@ class KnowledgeViewModel: BaseViewModel {
             let descriptor = FetchDescriptor<Knowledges>(
                 sortBy: [SortDescriptor(\Knowledges.createdAt, order: .forward)]
             )
-            knowledges = fetch(descriptor: descriptor)
+            knowledges = _fetch(descriptor: descriptor)
         }
     }
     
-    func onAdd(_ knowledge: Knowledges) {
+    func onAdd() -> Knowledges {
+        let knowledge = Knowledges(name: "new knowledge")
         save(knowledge)
         fetch()
+        return knowledge
     }
     
-    func onDelete(_ knowledge: Knowledges) {
-        delete(knowledge)
-        fetch()
+    func onDelete(_ knowledge: Knowledges?) {
+        if let knowledge = knowledge {
+            delete(knowledge)
+            fetch()
+        }
     }
     
     func buildIndex(knowledge: Knowledges) {
-        guard knowledge.knowledgeStatus == .inited else {
+        guard knowledge.status == .inited else {
             handleError(error: AppError.bizError(description: "Please choose the knowledge file."))
             return
         }
@@ -52,7 +56,7 @@ class KnowledgeViewModel: BaseViewModel {
                 try saveFileToDocumentsDirectory(knowledge.embeddings, to: savedPath)
                 knowledge.indexPath = savedPath
                 try saveChunks(chunks: knowledge.chunks)
-                knowledge.knowledgeStatus = .completed
+                knowledge.status = .completed
             } catch {
                 handleError(error: error)
             }
@@ -75,7 +79,7 @@ class KnowledgeViewModel: BaseViewModel {
             }
         )
         // TODO: should use sql filter
-        let chunks = fetch(descriptor: descriptor)
+        let chunks = _fetch(descriptor: descriptor)
         let result = chunks.filter {
             indices.contains($0.index)
         }
@@ -85,7 +89,7 @@ class KnowledgeViewModel: BaseViewModel {
     }
     
     func ragByKnowledge(knowledge: Knowledges, embedModel: Models?, prompt: String) async throws -> String {
-        if knowledge.knowledgeStatus != .completed {
+        if knowledge.status != .completed {
             throw AppError.bizError(description: "Knowledge is not completely configured.")
         }
         guard let embedModel = embedModel else {
@@ -95,7 +99,7 @@ class KnowledgeViewModel: BaseViewModel {
         let savedPath = "knowleges/\(knowledge.id).db"
         let knowledgeVector = try loadFileFromDocumentsDirectory(savedPath, as: [[Double]].self)
         // step2 embed prompt
-        let embeddings = try await OllamaService.shared.callEmbeddingApi(prompt: prompt, model: embedModel)
+        let embeddings = try await embedModel.embedding(texts: [prompt])
         let promptVector = embeddings[0]
         // step3 find most similar vector
         let scores = try mostSimilarVector(queryVector: promptVector, vectors: knowledgeVector, topK: knowledge.topK)
@@ -111,6 +115,23 @@ class KnowledgeViewModel: BaseViewModel {
         result.append(prompt)
         result.append("Answer: ")
         return result
+    }
+    
+    func handleModelPath(knowledge: Knowledges, directory: URL) {
+        knowledge.file = directory.path()
+        let gotAccess = directory.startAccessingSecurityScopedResource()
+        defer {
+            directory.stopAccessingSecurityScopedResource()
+        }
+        if !gotAccess {
+            handleError(error: AppError.directoryNotReadable(path: directory.path()))
+        }
+        do {
+            knowledge.bookmark = try createBookmarkData(for: directory)
+            knowledge.status = .ready
+        } catch {
+            handleError(error: error)
+        }
     }
     
 }

@@ -25,11 +25,10 @@ enum Groups: String {
 }
 
 struct ImageGenerationView: View {
-    @Environment(ModelViewModel.self) private var modelViewModel
-    @Environment(PluginViewModel.self) private var pluginViewModel
     @Bindable var viewModel: ImageViewModel
-    private var modelFamily: ModelFamily = .diffusers
-    private let title = "Text Generation"
+    @Environment(ModelViewModel.self) private var modelViewModel
+    private var modelType: ModelType = .diffusers
+    private let title = "Image Generation"
     
     init(viewModel: ImageViewModel) {
         self.viewModel = viewModel
@@ -41,26 +40,22 @@ struct ImageGenerationView: View {
                 .topAligned()
                 .padding(.leading, 16)
                 .navigationSplitViewColumnWidth(300)
+                .onAppear() {
+                    viewModel.onModelChange()
+                }
         } detail: {
             contentView
                 .navigationTitle("")
-                .navigationSplitViewColumnWidth(min: 600, ideal: 600, max: .infinity)
-                .task {
-                    let upscalerPlugin = pluginViewModel.get(family: .upscaler)
-                    if let plugin = upscalerPlugin, let modelId = plugin.modelId {
-                        viewModel.upscalerModel = modelViewModel.get(id: modelId)
-                    }
-                    viewModel.onModelChange()
-                }
+                .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
                 .onChange(of: viewModel.selectedModel) {
                     viewModel.onModelChange()
                 }
                 .toolbar {
-                    ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelFamily: modelFamily)
+                    ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .diffusers)
                 }
                 .overlay(alignment: .top) {
                     if viewModel.showModelPicker {
-                        ModelListPopup(model: $viewModel.selectedModel, modelFamily: modelFamily)
+                        ModelListPopup(model: $viewModel.selectedModel, modelType: .diffusers)
                     }
                 }
         }
@@ -96,34 +91,35 @@ struct ImageGenerationView: View {
     }
     
     // MARK: - contentView
-    @ViewBuilder
     @MainActor
     private var contentView: some View {
-        Spacer()
-        switch viewModel.generationState {
-        case .startup:
-            ContentUnavailableView {
-                Text("How are you today?")
-            }
-            .frame(width: 512, height: 512)
-        case .failed:
-            ContentUnavailableView {
-                Image(systemName: "exclamationmark.triangle")
-            }
-        case .loading:
-            ProgressView()
+        VStack(spacing: 0) {
+            Spacer()
+            switch viewModel.generationState {
+            case .startup:
+                ContentUnavailableView {
+                    Text("How are you today?")
+                }
                 .frame(width: 512, height: 512)
-        case .running(let image):
-            if let preview = image {
-                previewView(image: preview)
-            } else {
+            case .failed:
+                ContentUnavailableView {
+                    Image(systemName: "exclamationmark.triangle")
+                }
+            case .loading:
                 ProgressView()
                     .frame(width: 512, height: 512)
+            case .running(let image):
+                if let preview = image {
+                    previewView(image: preview)
+                } else {
+                    ProgressView()
+                        .frame(width: 512, height: 512)
+                }
+            case .complete(let image):
+                completeView(image: image)
             }
-        case .complete(let image):
-            completeView(image: image)
+            Spacer()
         }
-        Spacer()
     }
     
     // MARK: - prompts
@@ -260,9 +256,9 @@ struct ImageGenerationView: View {
     @MainActor
     private func toolBar(image: CGImage) -> some ToolbarContent {
         ToolbarItemGroup {
-            if viewModel.upscalerModel != nil {
+            if let model = modelViewModel.fetch(modelType: .esrgan).first {
                 Button("Upscale", systemImage: "plus.magnifyingglass") {
-                    viewModel.onUpscale(image: image)
+                    viewModel.onUpscale(image: image, model: model)
                 }
             }
             
@@ -290,16 +286,14 @@ struct ImageGenerationView: View {
 // MARK: - Preview
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Schema([Models.self, Plugins.self]), configurations: config)
-    container.mainContext.insert(Models(name: "qwen7b", modelFamily: .diffusers))
-    container.mainContext.insert(Models(name: "qwen7b", modelFamily: .diffusers))
+    let container = try! ModelContainer(for: Schema([Models.self]), configurations: config)
+    container.mainContext.insert(Models(name: "qwen7b", family: .mlmodel, type: .diffusers))
+    container.mainContext.insert(Models(name: "qwen7b", family: .mlmodel, type: .diffusers))
     let appState = AppState()
     let modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
-    let pluginViewModel = PluginViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     @State var viewModel = ImageViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     
     return ImageGenerationView(viewModel: viewModel)
         .environment(modelViewModel)
-        .environment(pluginViewModel)
         .environment(viewModel)
 }

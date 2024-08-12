@@ -11,7 +11,6 @@ enum ModelFamily: String, CaseIterable, Identifiable, Codable {
     case ollama = "Ollama"
     case gpt = "GPT"
     case gemini = "Gemini"
-    case diffusers = "Diffusers"
     case mlmodel = "MLModel"
     
     var id: Self { self }
@@ -21,7 +20,6 @@ enum ModelFamily: String, CaseIterable, Identifiable, Codable {
         case .ollama: return "http://127.0.0.1:11434"
         case .gpt: return "https://openai.com"
         case .gemini: return "https://generativelanguage.googleapis.com"
-        case .diffusers: return "folder://"
         case .mlmodel: return "file://"
         }
     }
@@ -31,7 +29,6 @@ enum ModelFamily: String, CaseIterable, Identifiable, Codable {
         case .ollama: return false
         case .gpt: return true
         case .gemini: return true
-        case .diffusers: return false
         case .mlmodel: return false
         }
     }

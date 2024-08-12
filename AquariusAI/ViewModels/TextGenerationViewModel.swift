@@ -14,7 +14,7 @@ class TextGenerationViewModel: BaseViewModel {
     var selectedModel: Models?
     var response: String = ""
     var showModelPicker = false
-    var config: OllamaConfig = OllamaConfig()
+    var config: LlmConfig = LlmConfig()
     var knowledge: Knowledges?
     var expandId: String?
     
@@ -33,11 +33,12 @@ class TextGenerationViewModel: BaseViewModel {
         }
         response = ""
         Task {
-            try await model.generate(prompt: prompt, systemPrompt: systemPrompt, config: config) { (text: String?) in
+            try await model.generate(prompt: prompt, systemPrompt: systemPrompt, config: config) { interval in
+            } onProgress: { (text: String?) in
                 if let text = text {
                     self.response += text
                 }
-            } onComplete: { (text: String?) in
+            } onComplete: { (text: String?, interval) in
             } onError: { error in
                 self.handleError(error: error)
             }

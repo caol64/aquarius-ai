@@ -12,13 +12,13 @@ struct ModelListPopup: View {
     @Binding var model: Models?
     @State private var menuWidth: CGFloat = 400
     @State private var menuHeight: CGFloat = 150
-    var modelFamily: ModelFamily
+    var modelType: ModelType
     
     var body: some View {
         VStack {
             Text("Choose Model")
                 .padding(.top, 8)
-            List(modelViewModel.fetch(modelFamily: modelFamily), selection: $model) { model in
+            List(modelViewModel.fetch(modelType: modelType), selection: $model) { model in
                 Text(model.name)
                     .lineLimit(1)
                     .tag(model)
@@ -52,7 +52,7 @@ struct ModelListPopup: View {
     
     private func caculateHeight() {
         Task {
-            let models = await modelViewModel.fetch(modelFamily: modelFamily).count
+            let models = await modelViewModel.fetch(modelType: modelType).count
             let height = CGFloat((models + 0) * 24)
             if height < menuHeight {
                 menuHeight = height

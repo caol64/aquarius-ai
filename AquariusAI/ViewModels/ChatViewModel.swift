@@ -18,7 +18,7 @@ class ChatViewModel: BaseViewModel {
     var isChatting = false
     var chattingMessage = ""
     var showModelPicker = false
-    var config: OllamaConfig = OllamaConfig()
+    var config: LlmConfig = LlmConfig()
     var expandId: String?
     var systemPrompt: String = "You are Aquarius, a helpful assistant."
     var keyDownMonitor: Any?
@@ -61,9 +61,12 @@ class ChatViewModel: BaseViewModel {
         ChatService.shared.addMessage(userMessage, chat: chat)
         messages.append(userMessage)
         Task {
-            try await OllamaService.shared.callCompletionApi(messages: messages, systemPrompt: systemPrompt, model: model, config: config) { response in
-                self.chattingMessage += (response.message?.content ?? "")
-            } onComplete: { data in
+            try await model.chat(messages: messages, systemPrompt: systemPrompt, config: config) { interval in
+            } onProgress: { (text: String?) in
+                if let text = text {
+                    self.chattingMessage += text
+                }
+            } onComplete: { (text: String?, interval) in
                 self.isChatting = false
                 let assistantMessage = Messages(chatId: self.chat.id, content: self.chattingMessage, sequence: 0, role: Role.assistant)
                 ChatService.shared.addMessage(assistantMessage, chat: self.chat)

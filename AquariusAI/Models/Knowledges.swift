@@ -13,40 +13,22 @@ class Knowledges: Identifiable {
     @Attribute(.unique) var id: String = UUID().uuidString
     var name: String
     var file: String?
-    var type: String
-    var status: String
+    var type: KnowledgeType
+    var status: KnowledgeStatus
     var chunkSize: Int = 1024
     var topK: Int = 2
     var indexPath: String?
     var createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
     var bookmark: Data?
-    @Transient var embedModel: Models?
+    var embedModel: Models?
     @Transient var chunks: [KnowledgeChunks] = []
     @Transient var embeddings: [[Double]] = []
     
     init(name: String) {
         self.name = name
-        self.type = KnowledgeType.txt.rawValue
-        self.status = KnowledgeStatus.inited.rawValue
-    }
-    
-    var knowledgeType: KnowledgeType {
-        get {
-            return KnowledgeType(rawValue: type)!
-        }
-        set {
-            type = newValue.rawValue
-        }
-    }
-    
-    var knowledgeStatus: KnowledgeStatus {
-        get {
-            return KnowledgeStatus(rawValue: status)!
-        }
-        set {
-            status = newValue.rawValue
-        }
+        self.type = .txt
+        self.status = .inited
     }
 }
 
@@ -63,15 +45,15 @@ extension Knowledges {
             throw AppError.bizError(description: "The knowledge file path is invalid.")
         }
         _ = directory.startAccessingSecurityScopedResource()
-        if !isFileReadable(path: directory.path()) {
-            throw AppError.directoryNotReadable(path: directory.path())
-        }
         defer {
             directory.stopAccessingSecurityScopedResource()
         }
+        if !isFileReadable(path: directory.path()) {
+            throw AppError.directoryNotReadable(path: directory.path())
+        }
         let content = try String(contentsOf: directory, encoding: .utf8)
         let chunks = splitTextIntoChunks(content, chunkSize: self.chunkSize)
-        self.embeddings = try await OllamaService.shared.callEmbeddingApi(prompts: chunks, model: embedModel)
+        self.embeddings = try await embedModel.embedding(texts: chunks)
         var knowledgeChunks: [KnowledgeChunks] = []
         for (i, chunk) in chunks.enumerated() {
             let knowledgeChunk = KnowledgeChunks(knowledgeId: self.id, content: chunk, index: i)

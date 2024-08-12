@@ -11,9 +11,8 @@ import SwiftData
 @main
 struct AquariusAIApp: App {
     @State private var appState: AppState
-    private var modelViewModel: ModelViewModel
-    private var knowledgeViewModel: KnowledgeViewModel
-    private var pluginViewModel: PluginViewModel
+    @State private var modelViewModel: ModelViewModel
+    @State private var knowledgeViewModel: KnowledgeViewModel
     @State private var textGenerationViewModel: TextGenerationViewModel
     @State private var chatViewModel: ChatViewModel
     @State private var imageViewModel: ImageViewModel
@@ -21,7 +20,6 @@ struct AquariusAIApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             Models.self,
-            Plugins.self,
             Knowledges.self,
             KnowledgeChunks.self,
         ])
@@ -41,7 +39,6 @@ struct AquariusAIApp: App {
         _appState = State(initialValue: appState)
         modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
         knowledgeViewModel = KnowledgeViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
-        pluginViewModel = PluginViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
         textGenerationViewModel = TextGenerationViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
         chatViewModel = ChatViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
         imageViewModel = ImageViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
@@ -57,7 +54,6 @@ struct AquariusAIApp: App {
             SettingsView()
                 .environment(modelViewModel)
                 .environment(knowledgeViewModel)
-                .environment(pluginViewModel)
                 .alert(isPresented: appState.showSettingsError, error: appState.errorBinding.appError) {}
         }
         #endif
@@ -66,7 +62,6 @@ struct AquariusAIApp: App {
             TextGenerationView(viewModel: textGenerationViewModel)
                 .environment(modelViewModel)
                 .environment(knowledgeViewModel)
-                .environment(pluginViewModel)
                 .alert(isPresented: appState.showTextError, error: appState.errorBinding.appError) {}
         }
         
@@ -74,14 +69,12 @@ struct AquariusAIApp: App {
             ChatView(viewModel: chatViewModel)
                 .environment(modelViewModel)
                 .environment(knowledgeViewModel)
-                .environment(pluginViewModel)
                 .alert(isPresented: appState.showChatError, error: appState.errorBinding.appError) {}
         }
         
         WindowGroup(id: Page.image.rawValue) {
             ImageGenerationView(viewModel: imageViewModel)
                 .environment(modelViewModel)
-                .environment(pluginViewModel)
                 .alert(isPresented: appState.showImageError, error: appState.errorBinding.appError) {}
         }
     }

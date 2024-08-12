@@ -8,7 +8,7 @@
 import Foundation
 
 @Observable
-class OllamaConfig {
+class LlmConfig {
     var rawInstruct: Bool = false
     var contextLength: Int = 2048
     var temperature: Double = 0.8

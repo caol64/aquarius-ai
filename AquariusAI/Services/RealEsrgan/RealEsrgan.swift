@@ -32,11 +32,11 @@ class RealEsrgan {
             throw AppError.bizError(description: "The model path is invalid, please check it in settings.")
         }
         _ = directory.startAccessingSecurityScopedResource()
-        if !isDirectoryReadable(path: directory.path()) {
-            throw AppError.directoryNotReadable(path: directory.path())
-        }
         defer {
             directory.stopAccessingSecurityScopedResource()
+        }
+        if !isDirectoryReadable(path: directory.path()) {
+            throw AppError.directoryNotReadable(path: directory.path())
         }
         mlModel = try MLModel(contentsOf: directory, configuration: MLModelConfiguration())
         guard let mlModel = mlModel else {

@@ -12,36 +12,48 @@ struct KnowledgeSettingsView: View {
     @Environment(KnowledgeViewModel.self) private var knowledgeViewModel
     @State private var showConfirmView = false
     @State private var selectedKnowledge: Knowledges?
-    @State private var model: Models?
+    @State private var pageState: SettingsPageState<Knowledges> = .empty
     
     var body: some View {
         VStack {
-            if knowledgeViewModel.knowledges.isEmpty {
-                emptyView
-            } else {
+            switch pageState {
+            case .empty:
+                Spacer()
+                ContentUnavailableView {
+                    Label("Here is utterly empty.", systemImage: "tray.fill")
+                } description: {
+                    Button("Add Knowledge") {
+                        selectedKnowledge = knowledgeViewModel.onAdd()
+                    }
+                }
+                Spacer()
+            case .noItemSelected:
                 HStack {
                     sideBar
                         .frame(width: 240)
-                    editor
+                    ContentUnavailableView {
+                        Text("No Knowledge Selected")
+                    }
+                    .frame(width: 640)
+                }
+            case .itemSelected(let knowledge):
+                HStack {
+                    sideBar
+                        .frame(width: 240)
+                    KnowledgeEditor(knowledge: knowledge)
                         .frame(width: 640)
                 }
             }
         }
-    }
-    
-    // MARK: - emptyView
-    @ViewBuilder
-    @MainActor
-    private var emptyView: some View {
-        Spacer()
-        ContentUnavailableView {
-            Label("Here is utterly empty.", systemImage: "tray.fill")
-        } description: {
-            Button("Add Knowledge") {
-                onAdd()
-            }
+        .onAppear {
+            updatePageState()
         }
-        Spacer()
+        .onChange(of: selectedKnowledge) {
+            updatePageState()
+        }
+        .onChange(of: knowledgeViewModel.knowledges) {
+            updatePageState()
+        }
     }
     
     // MARK: - sideBar
@@ -59,7 +71,7 @@ struct KnowledgeSettingsView: View {
             
             HStack {
                 Button("", systemImage: "plus") {
-                    onAdd()
+                    selectedKnowledge = knowledgeViewModel.onAdd()
                 }
                 
                 Button("", systemImage: "minus") {
@@ -69,10 +81,7 @@ struct KnowledgeSettingsView: View {
                 }
                 .alert(Text("Are you sure you want to delete the knowledge?"), isPresented: $showConfirmView) {
                     Button("Delete", role: .destructive) {
-                        if let knowledge = selectedKnowledge {
-                            knowledgeViewModel.delete(knowledge)
-                            selectedKnowledge = knowledgeViewModel.knowledges.first
-                        }
+                        knowledgeViewModel.onDelete(selectedKnowledge)
                     }
                 }
                 
@@ -81,28 +90,18 @@ struct KnowledgeSettingsView: View {
             .buttonStyle(.accessoryBar)
             .padding(8)
             .background(Color.white)
-            
         }
     }
     
-    // MARK: - editor
-    @ViewBuilder
-    private var editor: some View {
-        if let knowledge = selectedKnowledge {
-            KnowledgeEditor(knowledge: knowledge)
-        } else {
-            ContentUnavailableView {
-                Text("No Knowledge Selected")
-            }
-        }
-    }
-    
-    // MARK: - onAdd
-    private func onAdd() {
-        Task {
-            let knowledge = Knowledges(name: "new knowledge")
-            await knowledgeViewModel.save(knowledge)
-            selectedKnowledge = knowledge
+    // MARK: - updatePageState
+    @MainActor
+    private func updatePageState() {
+        if knowledgeViewModel.knowledges.isEmpty {
+            pageState = .empty
+        } else if selectedKnowledge == nil {
+            pageState = .noItemSelected
+        } else if let knowledge = selectedKnowledge {
+            pageState = .itemSelected(knowledge)
         }
     }
 }

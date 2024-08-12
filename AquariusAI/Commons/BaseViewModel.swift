@@ -26,7 +26,7 @@ class BaseViewModel {
         }
     }
     
-    func fetch<T: PersistentModel>(descriptor: FetchDescriptor<T>) -> [T] {
+    func _fetch<T: PersistentModel>(descriptor: FetchDescriptor<T>) -> [T] {
         do {
             return try modelContext.fetch(descriptor)
         } catch {

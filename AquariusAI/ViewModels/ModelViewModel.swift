@@ -14,39 +14,69 @@ class ModelViewModel: BaseViewModel {
     
     override init(errorBinding: ErrorBinding, modelContext: ModelContext) {
         super.init(errorBinding: errorBinding, modelContext: modelContext)
-        fetch()
+        _fetch()
     }
     
-    private func fetch() {
+    private func _fetch() {
         Task {
             let descriptor = FetchDescriptor<Models>(
                 sortBy: [SortDescriptor(\Models.createdAt, order: .forward)]
             )
-            models = fetch(descriptor: descriptor)
+            models = _fetch(descriptor: descriptor)
         }
     }
     
     func fetch(modelFamily: ModelFamily) -> [Models] {
-        return models.filter{ $0.modelFamily == modelFamily }
+        return models.filter{ $0.family == modelFamily }
+    }
+    
+    func fetch(modelType: ModelType) -> [Models] {
+        return models.filter{ $0.type == modelType }
     }
 
     func get(id: String) -> Models? {
         return models.first(where: { $0.id == id })
     }
     
-    func onAdd(_ model: Models) {
+    func onAdd(modelFamily: ModelFamily) -> Models {
+        let model = Models(name: "new model", family: modelFamily)
         save(model)
-        fetch()
+        _fetch()
+        return model
     }
     
-    func onDelete(_ model: Models) {
-        delete(model)
-        fetch()
+    func onDelete(model: Models?) {
+        if let model = model {
+            delete(model)
+            _fetch()
+        }
     }
     
     func selectDefault(modelFamily: ModelFamily) -> Models? {
         let models = fetch(modelFamily: modelFamily)
         return models.first
+    }
+    
+    func selectDefault(modelType: ModelType) -> Models? {
+        let models = fetch(modelType: modelType)
+        return models.first
+    }
+    
+    func handleModelPath(model: Models, directory: URL) {
+        model.endpoint = directory.path()
+        model.name = directory.lastPathComponent
+        let gotAccess = directory.startAccessingSecurityScopedResource()
+        defer {
+            directory.stopAccessingSecurityScopedResource()
+        }
+        if !gotAccess {
+            handleError(error: AppError.directoryNotReadable(path: directory.path()))
+        }
+        do {
+            model.bookmark = try createBookmarkData(for: directory)
+        } catch {
+            handleError(error: error)
+        }
     }
     
 }

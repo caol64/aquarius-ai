@@ -6,6 +6,7 @@
 //
 
 import Combine
+import Foundation
 
 class OllamaService {
     
@@ -15,7 +16,7 @@ class OllamaService {
     
     private init() {}
     
-    private func convertOptions(config: OllamaConfig) -> Ollama.Options {
+    private func convertOptions(config: LlmConfig) -> Ollama.Options {
         var options: Ollama.Options = Ollama.Options()
         options.numCtx = config.contextLength
         options.temperature = config.temperature
@@ -53,10 +54,11 @@ extension OllamaService {
     func callGenerateApi(prompt: String,
                          systemPrompt: String,
                          model: Models,
-                         config: OllamaConfig,
+                         config: LlmConfig,
                          onMessage: @escaping (_ response: Ollama.GenerateResponse) -> Void,
-                         onComplete: @escaping (_ data: String?) -> Void,
+                         onComplete: @escaping (_ data: String?, _ interval: TimeInterval) -> Void,
                          onError: @escaping (_ error: AppError) -> Void) async throws {
+        let startTime = Date()
         var request: Ollama.GenerateRequest = Ollama.GenerateRequest(model: model.endpoint ?? "", prompt: prompt)
         request.raw = config.rawInstruct
         if config.rawInstruct {
@@ -66,11 +68,12 @@ extension OllamaService {
             request.prompt = "\(systemPrompt)\n\(prompt)"
         }
         request.options = convertOptions(config: config)
-        generation = try await Ollama.shared.generate(host: model.host ?? "", data: request)
+        generation = try await Ollama.shared.generate(host: model.host, data: request)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    onComplete(nil)
+                    let interval = Date().timeIntervalSince(startTime)
+                    onComplete(nil, interval)
                 case .failure(let error):
                     onError(AppError.networkError(description: error.localizedDescription))
                 }
@@ -86,19 +89,21 @@ extension OllamaService {
     func callCompletionApi(messages: [Messages],
                            systemPrompt: String,
                            model: Models,
-                           config: OllamaConfig,
+                           config: LlmConfig,
                            onMessage: @escaping (_ response: Ollama.CompletionResponse) -> Void,
-                           onComplete: @escaping (_ file: String?) -> Void,
+                           onComplete: @escaping (_ file: String?, _ interval: TimeInterval) -> Void,
                            onError: @escaping (_ error: AppError) -> Void) async throws {
+        let startTime = Date()
         var messageContents = messages.map { $0.encode() }
         messageContents.insert(["role": Role.system.rawValue, "content": systemPrompt], at: 0)
         var request: Ollama.CompletionRequest = Ollama.CompletionRequest(model: model.endpoint ?? "", messages: messageContents)
         request.options = convertOptions(config: config)
-        generation = try await Ollama.shared.completion(host: model.host ?? "", data: request)
+        generation = try await Ollama.shared.completion(host: model.host, data: request)
             .sink(receiveCompletion: { completion in
                 switch completion {
                 case .finished:
-                    onComplete(nil)
+                    let interval = Date().timeIntervalSince(startTime)
+                    onComplete(nil, interval)
                 case .failure(let error):
                     onError(AppError.networkError(description: error.localizedDescription))
                 }
@@ -113,13 +118,8 @@ extension OllamaService {
     func callEmbeddingApi(prompts: [String],
                           model: Models) async throws -> [[Double]] {
         let request = Ollama.EmbeddingRequest(model: model.endpoint ?? "", input: prompts)
-        let response = try await Ollama.shared.embeddings(host: model.host ?? "", data: request)
+        let response = try await Ollama.shared.embeddings(host: model.host, data: request)
         return response.embeddings
-    }
-    
-    func callEmbeddingApi(prompt: String,
-                          model: Models) async throws -> [[Double]] {
-        return try await callEmbeddingApi(prompts: [prompt], model: model)
     }
 
 }

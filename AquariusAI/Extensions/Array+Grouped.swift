@@ -9,6 +9,6 @@ import Foundation
 
 extension Array where Element == Models {
     func grouped() -> [String: [Models]] {
-        Dictionary(grouping: self) { $0.family }
+        Dictionary(grouping: self) { $0.family.rawValue }
     }
 }

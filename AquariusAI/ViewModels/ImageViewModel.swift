@@ -7,6 +7,7 @@
 
 import Foundation
 import CoreGraphics.CGImage
+import StableDiffusion
 
 @Observable
 class ImageViewModel: BaseViewModel {
@@ -17,7 +18,6 @@ class ImageViewModel: BaseViewModel {
     var config: DiffusersConfig = DiffusersConfig()
     var generationState: GenerationState = .startup
     var status: String = ""
-    var upscalerModel: Models?
     var showModelPicker = false
     var expandId: String?
     
@@ -42,12 +42,16 @@ class ImageViewModel: BaseViewModel {
             do {
                 generationState = .loading
                 status = "Loading model..."
-                let pipeline = DiffusersPipeline(model: model, diffusersConfig: config)
                 generationState = .running(nil)
-                try await pipeline.generate(prompt: prompt, negativePrompt: negativePrompt) { interval in
-                    status = "Model loaded in \(String(format: "%.1f", interval)) s."
-                    generationState = .running(nil)
-                } onGenerateComplete: { file, interval in
+                try await model.generate(prompt: prompt, systemPrompt: negativePrompt, config: config) { interval in
+                    self.status = "Model loaded in \(String(format: "%.1f", interval)) s."
+                    self.generationState = .running(nil)
+                } onProgress: { (progress: PipelineProgress?) in
+                    if let progress = progress {
+                        self.status = "Generating progress \(progress.step + 1) / \(progress.stepCount) ..."
+                        self.generationState = .running(progress.currentImages[0])
+                    }
+                } onComplete: { (file: CGImage?, interval) in
                     if let image = file {
                         self.generationState = .complete(image)
                         self.status = "Image generated in \(String(format: "%.1f", interval)) s."
@@ -55,9 +59,7 @@ class ImageViewModel: BaseViewModel {
                         self.generationState = .failed
                         self.status = "Generate failed."
                     }
-                } onProgress: { progress in
-                    status = "Generating progress \(progress.step + 1) / \(progress.stepCount) ..."
-                    generationState = .running(progress.currentImages[0])
+                } onError: { error in
                 }
             } catch {
                 handleError(error: error)
@@ -79,11 +81,7 @@ class ImageViewModel: BaseViewModel {
         generationState = .startup
     }
     
-    func onUpscale(image: CGImage) {
-        guard let upscalerModel = upscalerModel else {
-            return
-        }
-        let model = RealEsrgan(model: upscalerModel)
+    func onUpscale(image: CGImage, model: Models) {
         Task {
             do {
                 status = "Upscaling..."

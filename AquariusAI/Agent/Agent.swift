@@ -10,12 +10,10 @@ import Foundation
 class Agent {
     private var models: [Models] = []
     private var knowledges: [Knowledges] = []
-    private var plugins: [Plugins] = []
     
-    init(model: Models, knowledge: Knowledges? = nil, plugin: Plugins? = nil) {
+    init(model: Models, knowledge: Knowledges? = nil) {
         self.models.append(model)
         knowledge.map { self.knowledges.append($0) }
-        plugin.map { self.plugins.append($0) }
     }
 
 }

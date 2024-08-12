@@ -11,7 +11,6 @@ import MarkdownUI
 
 struct TextGenerationView: View {
     @Bindable var viewModel: TextGenerationViewModel
-    let modelFamily: ModelFamily = .ollama
     let title = "Text Generation"
 
     var body: some View {
@@ -23,6 +22,20 @@ struct TextGenerationView: View {
         } detail: {
             contentView
                 .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
+                .navigationTitle("")
+                .toolbar {
+                    ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .llm)
+                    ToolbarItemGroup {
+                        Button("Copy", systemImage: "clipboard") {
+                            
+                        }
+                    }
+                }
+                .overlay(alignment: .top) {
+                    if viewModel.showModelPicker {
+                        ModelListPopup(model: $viewModel.selectedModel, modelType: .llm)
+                    }
+                }
         }
         .onTapGesture {
             viewModel.closeModelListPopup()
@@ -61,20 +74,6 @@ struct TextGenerationView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(.white)
-        .navigationTitle("")
-        .toolbar {
-            ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelFamily: modelFamily)
-            ToolbarItemGroup {
-                Button("Copy", systemImage: "clipboard") {
-                    
-                }
-            }
-        }
-        .overlay(alignment: .top) {
-            if viewModel.showModelPicker {
-                ModelListPopup(model: $viewModel.selectedModel, modelFamily: modelFamily)
-            }
-        }
     }
     
     // MARK: - prompts
@@ -101,16 +100,14 @@ struct TextGenerationView: View {
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: Models.self, configurations: config)
-    container.mainContext.insert(Models(name: "qwen7b", modelFamily: .ollama))
+    container.mainContext.insert(Models(name: "qwen7b", family: .ollama))
     let appState = AppState()
     let modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     let knowledgeViewModel = KnowledgeViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
-    let pluginViewModel = PluginViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     @State var viewModel = TextGenerationViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     
     return TextGenerationView(viewModel: viewModel)
         .environment(modelViewModel)
         .environment(knowledgeViewModel)
-        .environment(pluginViewModel)
         .environment(viewModel)
 }

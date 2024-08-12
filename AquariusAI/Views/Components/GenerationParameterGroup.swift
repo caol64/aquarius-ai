@@ -17,7 +17,7 @@ struct GenerationParameterGroup: View {
     }
     
     @Binding var expandId: String?
-    @Binding var config: OllamaConfig
+    @Binding var config: LlmConfig
     
     var body: some View {
         Group {
@@ -33,7 +33,7 @@ struct GenerationParameterGroup: View {
 
 // MARK: - Preview
 #Preview {
-    @State var config: OllamaConfig = OllamaConfig()
+    @State var config: LlmConfig = LlmConfig()
     @State var expandId: String?
     return GenerationParameterGroup(expandId: $expandId, config: $config)
 }

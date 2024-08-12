@@ -28,6 +28,23 @@ struct ChatView: View {
         } detail: {
             contentView
                 .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
+                .navigationTitle("")
+                .toolbar {
+                    ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .llm)
+                    ToolbarItemGroup {
+                        Button("Edit", systemImage: "pencil.line") {
+                            
+                        }
+                        Button("Delete", systemImage: "trash") {
+                            
+                        }
+                    }
+                }
+                .overlay(alignment: .top) {
+                    if viewModel.showModelPicker {
+                        ModelListPopup(model: $viewModel.selectedModel, modelType: .llm)
+                    }
+                }
         }
         .onTapGesture {
             viewModel.closeModelListPopup()
@@ -60,23 +77,6 @@ struct ChatView: View {
         VStack {
             chatArea
             chatInputArea
-        }
-        .navigationTitle("")
-        .toolbar {
-            ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelFamily: modelFamily)
-            ToolbarItemGroup {
-                Button("Edit", systemImage: "pencil.line") {
-                    
-                }
-                Button("Delete", systemImage: "trash") {
-                    
-                }
-            }
-        }
-        .overlay(alignment: .top) {
-            if viewModel.showModelPicker {
-                ModelListPopup(model: $viewModel.selectedModel, modelFamily: modelFamily)
-            }
         }
     }
     
@@ -172,21 +172,19 @@ struct ChatView: View {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
     let container = try! ModelContainer(for: Schema([Models.self]), configurations: config)
     let chat = Chats(name: "new chat")
-    ChatService.shared.addMessage(Messages(chatId: chat.id, content: "hi", sequence: 0, role: Role.user), chat: chat)
+    ChatService.shared.addMessage(Messages(chatId: chat.id, content: "hi", sequence: 0, role: .user), chat: chat)
     ChatService.shared.addMessage(Messages(chatId: chat.id, content: "Hello! How can I help you today? If you have any questions or need assistance, feel free to ask.", sequence: 1, role: Role.assistant), chat: chat)
-    ChatService.shared.addMessage(Messages(chatId: chat.id, content: "Thank you!", sequence:2, role: Role.user), chat: chat)
-    var model = Models(name: "qwen7b", modelFamily: .ollama)
+    ChatService.shared.addMessage(Messages(chatId: chat.id, content: "Thank you!", sequence:2, role: .user), chat: chat)
+    var model = Models(name: "qwen7b", family: .ollama)
     model.endpoint = "qwen2:1.5b-instruct-q5_K_M"
     container.mainContext.insert(model)
     let appState = AppState()
     let modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     let knowledgeViewModel = KnowledgeViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
-    let pluginViewModel = PluginViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     @State var viewModel = ChatViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     
     return ChatView(viewModel: viewModel)
         .environment(modelViewModel)
         .environment(knowledgeViewModel)
-        .environment(pluginViewModel)
         .environment(viewModel)
 }

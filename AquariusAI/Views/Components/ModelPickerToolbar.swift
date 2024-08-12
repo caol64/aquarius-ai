@@ -12,7 +12,7 @@ struct ModelPickerToolbar: ToolbarContent {
     @Binding var model: Models?
     @Binding var showModelPicker: Bool
     var title: String = "Aquarius AI"
-    var modelFamily: ModelFamily
+    var modelType: ModelType
     
     @MainActor
     var body: some ToolbarContent {
@@ -34,10 +34,10 @@ struct ModelPickerToolbar: ToolbarContent {
                 }
             }
             .onAppear {
-                model = modelViewModel.selectDefault(modelFamily: modelFamily)
+                model = modelViewModel.selectDefault(modelType: modelType)
             }
             .onChange(of: modelViewModel.models) {
-                model = modelViewModel.selectDefault(modelFamily: modelFamily)
+                model = modelViewModel.selectDefault(modelType: modelType)
             }
         }
     }

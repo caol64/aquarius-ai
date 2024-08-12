@@ -18,14 +18,14 @@ struct ModelEditor: View {
             Form {
                 TextField("Name", text: $model.name)
                 
-                if model.modelFamily.needAppKey {
+                if model.family.needAppKey {
                     TextField("AppKey", text: $model.appkey ?? "")
                         .padding(.top, 4)
                 }
                 
-                if !model.modelFamily.isLocal {
+                if !model.family.isLocal {
                     HStack(alignment: .bottom) {
-                        TextField("Host", text: $model.host ?? "")
+                        TextField("Host", text: $model.host)
                             .padding(.top, 4)
                         
                         Button("Refresh...") {
@@ -37,11 +37,13 @@ struct ModelEditor: View {
                         ForEach(remoteModels, id: \.self) { model in
                             Text(model)
                                 .lineLimit(1)
-                                .tag(model)
+                                .tag(Optional(model))
                         }
                     }
                     .onChange(of: model.endpoint) {
-                        model.name = model.endpoint ?? ""
+                        if let endpoint = model.endpoint {
+                            model.name = endpoint
+                        }
                     }
                     .onChange(of: remoteModels) {
                         if let remoteModel = remoteModels.first {
@@ -58,27 +60,25 @@ struct ModelEditor: View {
                         Button("Select...") {
                             showFileImporter = true
                         }
-                        .fileImporter(isPresented: $showFileImporter, allowedContentTypes: model.modelFamily.isLocalFolder ? [.folder]: [.mlmodel, .mlmodelc]) { result in
+                        .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.folder, .mlmodel, .mlmodelc]) { result in
                             switch result {
                             case .success(let directory):
-                                model.endpoint = directory.path()
-                                model.name = directory.lastPathComponent
-                                let gotAccess = directory.startAccessingSecurityScopedResource()
-                                if !gotAccess {
-                                    modelViewModel.handleError(error: AppError.directoryNotReadable(path: directory.path()))
-                                }
-                                do {
-                                    model.bookmark = try createBookmarkData(for: directory)
-                                } catch {
-                                    modelViewModel.handleError(error: error)
-                                }
-                                directory.stopAccessingSecurityScopedResource()
+                                modelViewModel.handleModelPath(model: model, directory: directory)
                             case .failure(let error):
                                 modelViewModel.handleError(error: error)
                             }
                         }
                     }
                 }
+                
+                Picker("Model Type", selection: $model.type) {
+                    ForEach(ModelType.allCases, id: \.self) { type in
+                        Text(type.rawValue)
+                            .lineLimit(1)
+                            .tag(type)
+                    }
+                }
+                .padding(.top, 4)
                 
                 Spacer()
                 
@@ -89,13 +89,11 @@ struct ModelEditor: View {
     
     // MARK: - Actions
     private func onSync() {
-        if let host = model.host {
-            Task {
-                do {
-                    remoteModels = try await OllamaService.shared.fetchModels(host: host)
-                } catch {
-                    await modelViewModel.handleError(error: error)
-                }
+        Task {
+            do {
+                remoteModels = try await model.sync()
+            } catch {
+                await modelViewModel.handleError(error: error)
             }
         }
     }

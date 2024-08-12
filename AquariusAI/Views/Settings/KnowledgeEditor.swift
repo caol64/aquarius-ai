@@ -29,18 +29,7 @@ struct KnowledgeEditor: View {
                     .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.text]) { result in
                         switch result {
                         case .success(let directory):
-                            knowledge.file = directory.path()
-                            let gotAccess = directory.startAccessingSecurityScopedResource()
-                            if !gotAccess {
-                                knowledgeViewModel.handleError(error: AppError.directoryNotReadable(path: directory.path()))
-                            }
-                            do {
-                                knowledge.bookmark = try createBookmarkData(for: directory)
-                                knowledge.knowledgeStatus = .ready
-                            } catch {
-                                knowledgeViewModel.handleError(error: error)
-                            }
-                            directory.stopAccessingSecurityScopedResource()
+                            knowledgeViewModel.handleModelPath(knowledge: knowledge, directory: directory)
                         case .failure(let error):
                             knowledgeViewModel.handleError(error: error)
                         }
@@ -68,16 +57,16 @@ struct KnowledgeEditor: View {
                 .padding(.top, 4)
                 
                 Picker("Embedding Model", selection: $knowledge.embedModel) {
-                    ForEach(modelViewModel.models, id: \.self) { model in
+                    ForEach(modelViewModel.fetch(modelType: .embedding), id: \.self) { model in
                         Text(model.name)
                             .lineLimit(1)
-                            .tag(model)
+                            .tag(Optional(model))
                     }
                 }
                 .padding(.top, 4)
                 
                 LabeledContent {
-                    Text(knowledge.status)
+                    Text(knowledge.status.rawValue.capitalized)
                 } label: {
                     Text("Status")
                 }
@@ -86,7 +75,7 @@ struct KnowledgeEditor: View {
                 Button("Build Index") {
                     knowledgeViewModel.buildIndex(knowledge: knowledge)
                 }
-                .disabled(knowledge.knowledgeStatus == .inited)
+                .disabled(knowledge.status == .inited)
                 .buttonStyle(.borderedProminent)
                 .rightAligned()
                 .padding(.top, 4)
