@@ -10,6 +10,7 @@ import SwiftData
 import MarkdownUI
 
 struct ChatView: View {
+    @Environment(AppState.self) private var appState
     @Bindable var viewModel: ChatViewModel
     @FocusState private var isFocused: Bool
     private var modelFamily: ModelFamily = .ollama
@@ -52,6 +53,7 @@ struct ChatView: View {
         .onDisappear {
             viewModel.removeKeyboardSubscribe()
         }
+        .monitorWindowFocus(for: .chat, appState: appState)
         .frame(minHeight: 580)
     }
     

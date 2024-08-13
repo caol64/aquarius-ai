@@ -10,7 +10,7 @@ import SwiftData
 
 struct ModelSettingsView: View {
     @Environment(ModelViewModel.self) private var modelViewModel
-    @State private var selectedModelFamily: ModelFamily = .ollama
+    @State private var selectedModelType: ModelType = .llm
     @State private var selectedModel: Models?
     @State private var showConfirmView = false
     @State private var pageState: SettingsPageState<Models> = .empty
@@ -25,7 +25,7 @@ struct ModelSettingsView: View {
                     Label("Here is utterly empty.", systemImage: "tray.fill")
                 } description: {
                     Button("Add Model") {
-                        selectedModel = modelViewModel.onAdd(modelFamily: selectedModelFamily)
+                        selectedModel = modelViewModel.onAdd(modelType: selectedModelType)
                     }
                 }
                 Spacer()
@@ -53,8 +53,9 @@ struct ModelSettingsView: View {
         .onChange(of: selectedModel) {
             updatePageState()
         }
-        .onChange(of: selectedModelFamily) {
+        .onChange(of: selectedModelType) {
             updatePageState()
+            selectedModel = modelViewModel.selectDefault(modelType: selectedModelType)
         }
         .onChange(of: modelViewModel.models) {
             updatePageState()
@@ -64,11 +65,10 @@ struct ModelSettingsView: View {
     // MARK: - modelFamilyPicker
     @ViewBuilder
     private var modelFamilyPicker: some View {
-        @Bindable var modelViewModel = modelViewModel
-        Picker("", selection: $selectedModelFamily) {
-            ForEach(ModelFamily.allCases) { modelFamily in
-                Text(modelFamily.rawValue)
-                    .tag(modelFamily)
+        Picker("", selection: $selectedModelType) {
+            ForEach(ModelType.allCases) { modelType in
+                Text(modelType.rawValue)
+                    .tag(modelType)
             }
         }
         .pickerStyle(.segmented)
@@ -82,7 +82,7 @@ struct ModelSettingsView: View {
         VStack(spacing: 0) {
             List(selection: $selectedModel) {
                 Section(header: Text("Models")) {
-                    ForEach(modelViewModel.fetch(modelFamily: selectedModelFamily)) { model in
+                    ForEach(modelViewModel.fetch(modelType: selectedModelType)) { model in
                         Label(model.name, systemImage: "cube")
                             .tag(model)
                     }
@@ -91,7 +91,7 @@ struct ModelSettingsView: View {
             
             HStack {
                 Button("", systemImage: "plus") {
-                    selectedModel = modelViewModel.onAdd(modelFamily: selectedModelFamily)
+                    selectedModel = modelViewModel.onAdd(modelType: selectedModelType)
                 }
                 
                 Button("", systemImage: "minus") {
@@ -102,6 +102,7 @@ struct ModelSettingsView: View {
                 .alert(Text("Are you sure you want to delete the model?"), isPresented: $showConfirmView) {
                     Button("Delete", role: .destructive) {
                         modelViewModel.onDelete(model: selectedModel)
+                        selectedModel = nil
                     }
                 }
                 
@@ -116,7 +117,7 @@ struct ModelSettingsView: View {
     // MARK: - updatePageState
     @MainActor
     private func updatePageState() {
-        if modelViewModel.fetch(modelFamily: selectedModelFamily).isEmpty {
+        if modelViewModel.fetch(modelType: selectedModelType).isEmpty {
             pageState = .empty
         } else if selectedModel == nil {
             pageState = .noItemSelected

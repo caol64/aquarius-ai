@@ -16,20 +16,20 @@ struct ModelListPopup: View {
     
     var body: some View {
         VStack {
-            Text("Choose Model")
-                .padding(.top, 8)
-            List(modelViewModel.fetch(modelType: modelType), selection: $model) { model in
-                Text(model.name)
-                    .lineLimit(1)
-                    .tag(model)
+            List(selection: $model) {
+                Section(header: Text("Models")) {
+                    ForEach(modelViewModel.fetch(modelType: modelType)) { model in
+                        Label(model.name, systemImage: "cube")
+                            .tag(model)
+                    }
+                }
             }
             .listStyle(PlainListStyle())
             .frame(width: menuWidth, height: menuHeight)
             
-            Divider()
             SettingsLink(
                 label: {
-                    Text("Manage Models")
+                    Text("Manage Model")
                 }
             )
             .padding(.bottom, 8)
@@ -53,7 +53,7 @@ struct ModelListPopup: View {
     private func caculateHeight() {
         Task {
             let models = await modelViewModel.fetch(modelType: modelType).count
-            let height = CGFloat((models + 0) * 24)
+            let height = CGFloat((models + 1) * 24 + 16)
             if height < menuHeight {
                 menuHeight = height
             }

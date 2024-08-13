@@ -10,6 +10,7 @@ import SwiftData
 import MarkdownUI
 
 struct TextGenerationView: View {
+    @Environment(AppState.self) private var appState
     @Bindable var viewModel: TextGenerationViewModel
     let title = "Text Generation"
 
@@ -40,6 +41,7 @@ struct TextGenerationView: View {
         .onTapGesture {
             viewModel.closeModelListPopup()
         }
+        .monitorWindowFocus(for: .image, appState: appState)
         .frame(minHeight: 580)
     }
     

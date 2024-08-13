@@ -46,13 +46,11 @@ struct KnowledgeEditor: View {
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.top, 4)
                 
-                LabeledContent {
+                LabeledContent("Top K") {
                     HStack {
                         IntHideStepSlider(value: $knowledge.topK, range: 1...10, step: 1)
                         Text(String(knowledge.topK))
                     }
-                } label: {
-                    Text("Top K")
                 }
                 .padding(.top, 4)
                 
@@ -65,20 +63,34 @@ struct KnowledgeEditor: View {
                 }
                 .padding(.top, 4)
                 
-                LabeledContent {
-                    Text(knowledge.status.rawValue.capitalized)
-                } label: {
-                    Text("Status")
+                LabeledContent("Status") {
+                    if knowledge.status == .completed {
+                        Text("Indexing is complete.")
+                            .foregroundColor(.green)
+                    } else {
+                        Text("Indexing is not yet complete.")
+                            .foregroundColor(.red)
+                    }
                 }
                 .padding(.top, 4)
                 
-                Button("Build Index") {
-                    knowledgeViewModel.buildIndex(knowledge: knowledge)
+                if knowledge.status != .inited && knowledge.embedModel != nil {
+                    ZStack {
+                        Button("Build Index") {
+                            knowledgeViewModel.buildIndex(knowledge: knowledge)
+                        }
+                        .disabled(knowledgeViewModel.isBuilding)
+                        
+                        if knowledgeViewModel.isBuilding {
+                            ProgressView()
+                                .scaleEffect(0.5)
+                                .frame(width: 10, height: 10)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .rightAligned()
+                    .padding(.top, 4)
                 }
-                .disabled(knowledge.status == .inited)
-                .buttonStyle(.borderedProminent)
-                .rightAligned()
-                .padding(.top, 4)
                 
                 Spacer()
                 

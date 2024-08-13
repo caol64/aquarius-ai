@@ -17,12 +17,13 @@ class Knowledges: Identifiable {
     var status: KnowledgeStatus
     var chunkSize: Int = 1024
     var topK: Int = 2
-    var indexPath: String?
+    var vecPath: String?
+    var chunkPath: String?
     var createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
     var bookmark: Data?
     var embedModel: Models?
-    @Transient var chunks: [KnowledgeChunks] = []
+    @Transient var chunks: [String] = []
     @Transient var embeddings: [[Double]] = []
     
     init(name: String) {
@@ -34,7 +35,6 @@ class Knowledges: Identifiable {
 
 extension Knowledges {
     func buildIndex(embedModel: Models) async throws {
-        let startTime = Date()
         var modelDirectory: URL?
         if let data = self.bookmark {
             modelDirectory = restoreFileAccess(with: data) { data in
@@ -52,13 +52,42 @@ extension Knowledges {
             throw AppError.directoryNotReadable(path: directory.path())
         }
         let content = try String(contentsOf: directory, encoding: .utf8)
-        let chunks = splitTextIntoChunks(content, chunkSize: self.chunkSize)
+        self.chunks = splitTextIntoChunks(content, chunkSize: self.chunkSize)
         self.embeddings = try await embedModel.embedding(texts: chunks)
-        var knowledgeChunks: [KnowledgeChunks] = []
-        for (i, chunk) in chunks.enumerated() {
-            let knowledgeChunk = KnowledgeChunks(knowledgeId: self.id, content: chunk, index: i)
-            knowledgeChunks.append(knowledgeChunk)
+        let vecPath = "knowleges/\(self.id).vec"
+        try saveFileToDocumentsDirectory(self.embeddings, to: vecPath)
+        let chunkPath = "knowleges/\(self.id).chunk"
+        try saveFileToDocumentsDirectory(self.chunks, to: chunkPath)
+    }
+}
+
+extension Knowledges {
+    func ragByKnowledge(prompt: String) async throws -> String {
+        if self.status != .completed {
+            throw AppError.bizError(description: "Knowledge is not completely configured.")
         }
-        self.chunks = knowledgeChunks
+        guard let embedModel = self.embedModel else {
+            throw AppError.bizError(description: "The embedding model is not configured.")
+        }
+        // step1 load knowledge
+        let vecPath = "knowleges/\(self.id).vec"
+        self.embeddings = try loadFileFromDocumentsDirectory(vecPath, as: [[Double]].self)
+        let chunkPath = "knowleges/\(self.id).chunk"
+        self.chunks = try loadFileFromDocumentsDirectory(chunkPath, as: [String].self)
+        // step2 embed prompt
+        let embeddings = try await embedModel.embedding(texts: [prompt])
+        let promptVector = embeddings[0]
+        // step3 find most similar chunks
+        let scores = try mostSimilarVector(queryVector: promptVector, vectors: self.embeddings, topK: self.topK)
+        let chunks = scores.map { self.chunks[$0.index] }
+        // step4 build prompt
+        var result = "Answer the question based only on the following context:\n\n"
+        for chunk in chunks {
+            result.append(chunk)
+            result.append("\n")
+        }
+        result.append("\nQuestion:\n\n")
+        result.append(prompt)
+        return result
     }
 }

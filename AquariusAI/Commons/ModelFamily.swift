@@ -37,12 +37,4 @@ enum ModelFamily: String, CaseIterable, Identifiable, Codable {
         return !self.host.starts(with: "http")
     }
     
-    var isLocalFile: Bool {
-        return self.host.starts(with: "file://")
-    }
-    
-    var isLocalFolder: Bool {
-        return self.host.starts(with: "folder://")
-    }
-    
 }

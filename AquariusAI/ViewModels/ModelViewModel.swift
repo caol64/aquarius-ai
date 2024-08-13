@@ -38,8 +38,8 @@ class ModelViewModel: BaseViewModel {
         return models.first(where: { $0.id == id })
     }
     
-    func onAdd(modelFamily: ModelFamily) -> Models {
-        let model = Models(name: "new model", family: modelFamily)
+    func onAdd(modelType: ModelType) -> Models {
+        let model = Models(name: "new model", family: modelType.supportedFamily.first!, type: modelType)
         save(model)
         _fetch()
         return model

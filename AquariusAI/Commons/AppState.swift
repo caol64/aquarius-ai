@@ -12,6 +12,10 @@ import SwiftUI
 class AppState {
     var activatedPage: Page?
     var errorBinding: ErrorBinding = ErrorBinding()
+    
+    func activePage(page: Page) {
+        self.activatedPage = page
+    }
 
     var showSettingsError: Binding<Bool> {
         Binding {

@@ -21,7 +21,6 @@ struct AquariusAIApp: App {
         let schema = Schema([
             Models.self,
             Knowledges.self,
-            KnowledgeChunks.self,
         ])
 
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
@@ -52,6 +51,7 @@ struct AquariusAIApp: App {
 
         Settings {
             SettingsView()
+                .environment(appState)
                 .environment(modelViewModel)
                 .environment(knowledgeViewModel)
                 .alert(isPresented: appState.showSettingsError, error: appState.errorBinding.appError) {}
@@ -60,6 +60,7 @@ struct AquariusAIApp: App {
         
         WindowGroup(id: Page.text.rawValue) {
             TextGenerationView(viewModel: textGenerationViewModel)
+                .environment(appState)
                 .environment(modelViewModel)
                 .environment(knowledgeViewModel)
                 .alert(isPresented: appState.showTextError, error: appState.errorBinding.appError) {}
@@ -67,6 +68,7 @@ struct AquariusAIApp: App {
         
         WindowGroup(id: Page.chat.rawValue) {
             ChatView(viewModel: chatViewModel)
+                .environment(appState)
                 .environment(modelViewModel)
                 .environment(knowledgeViewModel)
                 .alert(isPresented: appState.showChatError, error: appState.errorBinding.appError) {}
@@ -74,6 +76,7 @@ struct AquariusAIApp: App {
         
         WindowGroup(id: Page.image.rawValue) {
             ImageGenerationView(viewModel: imageViewModel)
+                .environment(appState)
                 .environment(modelViewModel)
                 .alert(isPresented: appState.showImageError, error: appState.errorBinding.appError) {}
         }

@@ -9,7 +9,6 @@ import SwiftUI
 
 @Observable
 class ErrorBinding {
-    // TODO: window group bug
     var appError: AppError?
     
     var showError: Binding<Bool> {

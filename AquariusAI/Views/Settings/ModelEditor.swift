@@ -18,6 +18,15 @@ struct ModelEditor: View {
             Form {
                 TextField("Name", text: $model.name)
                 
+                Picker("Model Family", selection: $model.family) {
+                    ForEach(model.type.supportedFamily, id: \.self) { family in
+                        Text(family.rawValue)
+                            .lineLimit(1)
+                            .tag(family)
+                    }
+                }
+                .padding(.top, 4)
+                
                 if model.family.needAppKey {
                     TextField("AppKey", text: $model.appkey ?? "")
                         .padding(.top, 4)
@@ -46,7 +55,7 @@ struct ModelEditor: View {
                         }
                     }
                     .onChange(of: remoteModels) {
-                        if let remoteModel = remoteModels.first {
+                        if let remoteModel = remoteModels.first, model.endpoint == nil {
                             model.endpoint = remoteModel
                         }
                     }
@@ -70,15 +79,6 @@ struct ModelEditor: View {
                         }
                     }
                 }
-                
-                Picker("Model Type", selection: $model.type) {
-                    ForEach(ModelType.allCases, id: \.self) { type in
-                        Text(type.rawValue)
-                            .lineLimit(1)
-                            .tag(type)
-                    }
-                }
-                .padding(.top, 4)
                 
                 Spacer()
                 

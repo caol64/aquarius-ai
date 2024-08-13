@@ -40,8 +40,7 @@ extension Models {
                            onProgress: @escaping (_ progress: P?) -> Void,
                            onComplete: @escaping (_ response: R?, _ interval: TimeInterval) -> Void,
                            onError: @escaping (_ error: AppError) -> Void) async throws {
-        switch self.family {
-        case .ollama:
+        if self.family == .ollama {
             try await OllamaService.shared.callGenerateApi(prompt: prompt, systemPrompt: systemPrompt, model: self, config: config as! LlmConfig) { response in
                 onProgress(response.response as? P)
             } onComplete: { data, interval in
@@ -49,28 +48,17 @@ extension Models {
             } onError: { error in
                 onError(error)
             }
-        case .gpt:
-            return
-        case .gemini:
-            return
-        case .mlmodel:
-            switch self.type {
-            case .llm:
-                return
-            case .embedding:
-                return
-            case .diffusers:
-                let pipeline = DiffusersPipeline(model: self, diffusersConfig: config as! DiffusersConfig)
-                try await pipeline.generate(prompt: prompt, negativePrompt: systemPrompt) { interval in
-                    onLoad(interval)
-                } onGenerateComplete: { data, interval in
-                    onComplete(data as? R, interval)
-                } onProgress: { progress in
-                    onProgress(progress as? P)
-                }
-            case .esrgan:
-                return
+        } else if self.type == .diffusers {
+            let pipeline = DiffusersPipeline(model: self, diffusersConfig: config as! DiffusersConfig)
+            try await pipeline.generate(prompt: prompt, negativePrompt: systemPrompt) { interval in
+                onLoad(interval)
+            } onGenerateComplete: { data, interval in
+                onComplete(data as? R, interval)
+            } onProgress: { progress in
+                onProgress(progress as? P)
             }
+        } else {
+            throw AppError.bizError(description: "Not implemented.")
         }
     }
 }
@@ -84,8 +72,7 @@ extension Models {
                        onProgress: @escaping (_ progress: P?) -> Void,
                        onComplete: @escaping (_ response: R?, _ interval: TimeInterval) -> Void,
                        onError: @escaping (_ error: AppError) -> Void) async throws {
-        switch self.family {
-        case .ollama:
+        if self.family == .ollama {
             try await OllamaService.shared.callCompletionApi(messages: messages, systemPrompt: systemPrompt, model: self, config: config as! LlmConfig) { response in
                 onProgress(response.message?.content as? P)
             } onComplete: { data, interval in
@@ -93,12 +80,8 @@ extension Models {
             } onError: { error in
                 onError(error)
             }
-        case .gpt:
-            return
-        case .gemini:
-            return
-        case .mlmodel:
-            return
+        } else {
+            throw AppError.bizError(description: "Not implemented.")
         }
     }
 }
@@ -109,11 +92,7 @@ extension Models {
         switch self.family {
         case .ollama:
             return try await OllamaService.shared.callEmbeddingApi(prompts: texts, model: self)
-        case .gpt:
-            throw AppError.bizError(description: "Not implemented.")
-        case .gemini:
-            throw AppError.bizError(description: "Not implemented.")
-        case .mlmodel:
+        default:
             throw AppError.bizError(description: "Not implemented.")
         }
     }
@@ -126,12 +105,8 @@ extension Models {
         switch self.family {
         case .ollama:
             return try await OllamaService.shared.fetchModels(host: self.host)
-        case .gpt:
+        default:
             throw AppError.bizError(description: "Not implemented.")
-        case .gemini:
-            throw AppError.bizError(description: "Not implemented.")
-        case .mlmodel:
-            throw AppError.bizError(description: "CoreML models do not require synchronization.")
         }
     }
 }
@@ -140,8 +115,12 @@ extension Models {
 extension Models {
     
     func upscale(image: CGImage) async throws -> CGImage {
-        let model = RealEsrgan(model: self)
-        let result = try await model.upscale(image: image)
-        return result
+        if self.type == .esrgan {
+            let model = RealEsrgan(model: self)
+            let result = try await model.upscale(image: image)
+            return result
+        } else {
+            throw AppError.bizError(description: "Not implemented.")
+        }
     }
 }

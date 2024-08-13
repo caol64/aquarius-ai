@@ -33,7 +33,11 @@ class TextGenerationViewModel: BaseViewModel {
         }
         response = ""
         Task {
-            try await model.generate(prompt: prompt, systemPrompt: systemPrompt, config: config) { interval in
+            var promptContext = prompt
+            if let knowledge = knowledge {
+                promptContext = try await knowledge.ragByKnowledge(prompt: prompt)
+            }
+            try await model.generate(prompt: promptContext, systemPrompt: systemPrompt, config: config) { interval in
             } onProgress: { (text: String?) in
                 if let text = text {
                     self.response += text

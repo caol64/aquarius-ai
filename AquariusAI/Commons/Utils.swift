@@ -150,7 +150,6 @@ func mostSimilarVector(queryVector: [Double], vectors: [[Double]], topK: Int) th
         result.append((index, similarity))
     }
     result.sort(by: { $0.similarity > $1.similarity })
-    print(result)
     return Array(result.prefix(topK))
 }
 

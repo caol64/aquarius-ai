@@ -11,6 +11,9 @@ struct SettingsView: View {
     private enum Tabs: String {
         case models, knowledges
     }
+    
+    @Environment(AppState.self) private var appState
+
     var body: some View {
         TabView {
             ModelSettingsView()
@@ -27,5 +30,6 @@ struct SettingsView: View {
                 .frame(width: 880, height: 480)
         }
         .padding()
+        .monitorWindowFocus(for: .settings, appState: appState)
     }
 }

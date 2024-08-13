@@ -25,8 +25,9 @@ enum Groups: String {
 }
 
 struct ImageGenerationView: View {
-    @Bindable var viewModel: ImageViewModel
+    @Environment(AppState.self) private var appState
     @Environment(ModelViewModel.self) private var modelViewModel
+    @Bindable var viewModel: ImageViewModel
     private var modelType: ModelType = .diffusers
     private let title = "Image Generation"
     
@@ -40,16 +41,10 @@ struct ImageGenerationView: View {
                 .topAligned()
                 .padding(.leading, 16)
                 .navigationSplitViewColumnWidth(300)
-                .onAppear() {
-                    viewModel.onModelChange()
-                }
         } detail: {
             contentView
                 .navigationTitle("")
                 .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
-                .onChange(of: viewModel.selectedModel) {
-                    viewModel.onModelChange()
-                }
                 .toolbar {
                     ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .diffusers)
                 }
@@ -62,6 +57,13 @@ struct ImageGenerationView: View {
         .onTapGesture {
             viewModel.closeModelListPopup()
         }
+        .onChange(of: viewModel.selectedModel) {
+            viewModel.onModelChange()
+        }
+        .onAppear() {
+            viewModel.onModelChange()
+        }
+        .monitorWindowFocus(for: .image, appState: appState)
     }
     
     // MARK: - sidebar
@@ -275,7 +277,7 @@ struct ImageGenerationView: View {
                 case .success(let url):
                     print("File saved to \(url)")
                 case .failure(let error):
-                    print("Failed to save file: \(error.localizedDescription)")
+                    viewModel.handleError(error: error)
                 }
             }
         }
