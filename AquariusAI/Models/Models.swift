@@ -63,29 +63,6 @@ extension Models {
     }
 }
 
-// MARK: - chat completion
-extension Models {
-    func chat<C, P, R>(messages: [Messages],
-                       systemPrompt: String,
-                       config: C?,
-                       onLoad: @escaping (_ interval: TimeInterval) -> Void,
-                       onProgress: @escaping (_ progress: P?) -> Void,
-                       onComplete: @escaping (_ response: R?, _ interval: TimeInterval) -> Void,
-                       onError: @escaping (_ error: AppError) -> Void) async throws {
-        if self.family == .ollama {
-            try await OllamaService.shared.callCompletionApi(messages: messages, systemPrompt: systemPrompt, model: self, config: config as! LlmConfig) { response in
-                onProgress(response.message?.content as? P)
-            } onComplete: { data, interval in
-                onComplete(data as? R, interval)
-            } onError: { error in
-                onError(error)
-            }
-        } else {
-            throw AppError.bizError(description: "Not implemented.")
-        }
-    }
-}
-
 // MARK: - embedding
 extension Models {
     func embedding(texts: [String]) async throws -> [[Double]] {

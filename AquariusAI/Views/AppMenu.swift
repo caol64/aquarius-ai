@@ -12,9 +12,6 @@ struct AppMenu: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        Button(Page.chat.rawValue.capitalized) {
-            openChat()
-        }
         Button(Page.text.rawValue.capitalized) {
             openTextGenerate()
         }
@@ -33,10 +30,6 @@ struct AppMenu: View {
         }
     }
     
-    func openChat() {
-        openWindow(id: Page.chat.rawValue)
-        NSApp.activate(ignoringOtherApps: true)
-    }
     func openTextGenerate() {
         openWindow(id: Page.text.rawValue)
         NSApp.activate(ignoringOtherApps: true)

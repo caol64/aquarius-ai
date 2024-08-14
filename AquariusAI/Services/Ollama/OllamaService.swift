@@ -84,35 +84,6 @@ extension OllamaService {
     }
 }
 
-// MARK: - Call Completion Api
-extension OllamaService {
-    func callCompletionApi(messages: [Messages],
-                           systemPrompt: String,
-                           model: Models,
-                           config: LlmConfig,
-                           onMessage: @escaping (_ response: Ollama.CompletionResponse) -> Void,
-                           onComplete: @escaping (_ file: String?, _ interval: TimeInterval) -> Void,
-                           onError: @escaping (_ error: AppError) -> Void) async throws {
-        let startTime = Date()
-        var messageContents = messages.map { $0.encode() }
-        messageContents.insert(["role": Role.system.rawValue, "content": systemPrompt], at: 0)
-        var request: Ollama.CompletionRequest = Ollama.CompletionRequest(model: model.endpoint ?? "", messages: messageContents)
-        request.options = convertOptions(config: config)
-        generation = try await Ollama.shared.completion(host: model.host, data: request)
-            .sink(receiveCompletion: { completion in
-                switch completion {
-                case .finished:
-                    let interval = Date().timeIntervalSince(startTime)
-                    onComplete(nil, interval)
-                case .failure(let error):
-                    onError(AppError.networkError(description: error.localizedDescription))
-                }
-            }, receiveValue: { response in
-                onMessage(response)
-            })
-    }
-}
-
 // MARK: - Call Embedding Api
 extension OllamaService {
     func callEmbeddingApi(prompts: [String],

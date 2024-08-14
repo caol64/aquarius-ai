@@ -37,16 +37,6 @@ class AppState {
         }
     }
     
-    var showChatError: Binding<Bool> {
-        Binding {
-            return self.errorBinding.appError != nil && self.activatedPage == .chat
-        } set: { showError in
-            if !showError {
-                self.errorBinding.appError = nil
-            }
-        }
-    }
-    
     var showImageError: Binding<Bool> {
         Binding {
             return self.errorBinding.appError != nil && self.activatedPage == .image

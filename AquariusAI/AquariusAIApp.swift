@@ -14,7 +14,6 @@ struct AquariusAIApp: App {
     @State private var modelViewModel: ModelViewModel
     @State private var knowledgeViewModel: KnowledgeViewModel
     @State private var textGenerationViewModel: TextGenerationViewModel
-    @State private var chatViewModel: ChatViewModel
     @State private var imageViewModel: ImageViewModel
 
     var sharedModelContainer: ModelContainer = {
@@ -39,7 +38,6 @@ struct AquariusAIApp: App {
         modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
         knowledgeViewModel = KnowledgeViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
         textGenerationViewModel = TextGenerationViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
-        chatViewModel = ChatViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
         imageViewModel = ImageViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
     }
 
@@ -64,14 +62,6 @@ struct AquariusAIApp: App {
                 .environment(modelViewModel)
                 .environment(knowledgeViewModel)
                 .alert(isPresented: appState.showTextError, error: appState.errorBinding.appError) {}
-        }
-        
-        WindowGroup(id: Page.chat.rawValue) {
-            ChatView(viewModel: chatViewModel)
-                .environment(appState)
-                .environment(modelViewModel)
-                .environment(knowledgeViewModel)
-                .alert(isPresented: appState.showChatError, error: appState.errorBinding.appError) {}
         }
         
         WindowGroup(id: Page.image.rawValue) {

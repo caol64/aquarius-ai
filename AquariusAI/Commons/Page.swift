@@ -10,6 +10,5 @@ import Foundation
 enum Page: String {
     case settings
     case text
-    case chat
     case image
 }
