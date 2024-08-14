@@ -1,6 +1,8 @@
 # AquariusAI
 
-The design philosophy of `AquariusAI` is centered around making it easier for you to utilize a variety of open-source models, assisting in enhancing the efficiency of daily work and improving quality of life. It also addresses concerns about privacy leaks and cost associated with using commercial models. `AquariusAI` does not provide any AI models itself; thus, users need to prepare their own models.
+English | [中文](README_zh.md)
+
+`AquariusAI` is a macOS client designed to make it more convenient for you to use "open-source AI models," addressing concerns about privacy leaks and cost associated with proprietary models. `AquariusAI` does not provide any "AI models" itself; you need to prepare the required models on your own.
 
 ## Features
 

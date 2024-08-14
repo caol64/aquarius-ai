@@ -11,6 +11,15 @@ import StableDiffusion
 
 @Observable
 class ImageViewModel: BaseViewModel {
+    
+    enum GenerationState {
+        case startup
+        case loading
+        case running(CGImage?)
+        case complete(CGImage)
+        case failed
+    }
+    
     var prompt: String = ""
     var negativePrompt: String = ""
     var selectedModel: Models?

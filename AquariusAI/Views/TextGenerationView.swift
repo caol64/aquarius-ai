@@ -27,8 +27,8 @@ struct TextGenerationView: View {
                 .toolbar {
                     ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .llm)
                     ToolbarItemGroup {
-                        Button("Copy", systemImage: "clipboard") {
-                            
+                        Button("Copy", systemImage: viewModel.isCopied ? "checkmark" : "clipboard") {
+                            viewModel.onCopy()
                         }
                     }
                 }
@@ -41,8 +41,14 @@ struct TextGenerationView: View {
         .onTapGesture {
             viewModel.closeModelListPopup()
         }
-        .monitorWindowFocus(for: .image, appState: appState)
+        .monitorWindowFocus(for: .text, appState: appState)
         .frame(minHeight: 580)
+        .onAppear() {
+            appState.openedWindows.insert(.text)
+        }
+        .onDisappear() {
+            appState.openedWindows.remove(.text)
+        }
     }
     
     // MARK: - sidebar
@@ -57,8 +63,23 @@ struct TextGenerationView: View {
             GenerationParameterGroup(expandId: $viewModel.expandId, config: $viewModel.config)
                 .padding(.trailing, 16)
         }
-        Button("Generate") {
-            viewModel.onGenerate()
+        VStack {
+            if case .running = viewModel.generationState {
+                Button("Cancel") {
+                    
+                }
+                .frame(width: 100)
+            } else if case .preparing = viewModel.generationState {
+                Button("Generate") {
+                }
+                .disabled(true)
+                .frame(width: 100)
+            } else {
+                Button("Generate") {
+                    viewModel.onGenerate()
+                }
+                .frame(width: 100)
+            }
         }
         .buttonStyle(.borderedProminent)
         .rightAligned()
@@ -68,14 +89,25 @@ struct TextGenerationView: View {
     // MARK: - contentView
     @MainActor
     private var contentView: some View {
-        ScrollView {
-            Markdown(viewModel.response)
-                .textSelection(.enabled)
-                .topAligned()
-                .padding()
-                .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(spacing: 0) {
+            switch viewModel.generationState {
+            case .startup:
+                Spacer()
+                ContentUnavailableView {
+                    Text("How are you today?")
+                }
+                Spacer()
+            default:
+                ScrollView {
+                    Markdown(viewModel.response)
+                        .textSelection(.enabled)
+                        .topAligned()
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .background(.white)
+            }
         }
-        .background(.white)
     }
     
     // MARK: - prompts

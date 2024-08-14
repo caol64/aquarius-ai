@@ -25,7 +25,6 @@ class DiffusersPipeline {
     
     deinit {
         pipeline?.unloadResources()
-        print("unloadResources")
     }
 
     private func loadModel(modelDirectory: URL) async throws -> TimeInterval {
@@ -77,7 +76,6 @@ class DiffusersPipeline {
         var interval = try await loadModel(modelDirectory: directory)
         onLoadComplete(interval)
         
-        print("start generate")
         canceled = false
         let stepCount: Int = diffusersConfig.stepCount
         let cfgScale: Float = Float(diffusersConfig.cfgScale)

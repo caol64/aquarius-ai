@@ -12,6 +12,7 @@ import SwiftUI
 class AppState {
     var activatedPage: Page?
     var errorBinding: ErrorBinding = ErrorBinding()
+    var openedWindows: Set<Page> = []
     
     func activePage(page: Page) {
         self.activatedPage = page

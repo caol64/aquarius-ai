@@ -43,8 +43,9 @@ struct AquariusAIApp: App {
 
     var body: some Scene {
         #if os(macOS)
-        MenuBarExtra("Aquarius AI", systemImage: "hammer") {
+        MenuBarExtra("Aquarius AI", image: "MenubarIcon") {
             AppMenu()
+                .environment(appState)
         }
 
         Settings {

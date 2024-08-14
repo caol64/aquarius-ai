@@ -1,0 +1,8 @@
+<svg width="22" height="22" viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="512" cy="512" r="452" stroke-width="64" stroke="#000000" fill="none" transform="scale(0.0215) translate(11 11)" />
+
+  <!-- Water waves (Aquarius symbol) -->
+  <path d="M280,440 C360,360 440,360 520,440 C600,520 680,520 760,440" stroke="#000000" stroke-width="64" fill="none" transform="scale(0.0215) translate(11 11)" />
+  <path d="M280,600 C360,520 440,520 520,600 C620,680 680,520 760,600" stroke="#000000" stroke-width="64" fill="none" transform="scale(0.0215) translate(11 11)" />
+</svg>

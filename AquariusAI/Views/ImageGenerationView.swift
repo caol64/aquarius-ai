@@ -8,23 +8,15 @@
 import SwiftUI
 import SwiftData
 
-enum GenerationState {
-    case startup
-    case loading
-    case running(CGImage?)
-    case complete(CGImage)
-    case failed
-}
-
-enum Groups: String {
-    case steps
-    case scale = "CFG Scale"
-    case ratio = "Aspect Ratio"
-    case sdxl = "HD"
-    case seed
-}
-
 struct ImageGenerationView: View {
+    enum Groups: String {
+        case steps
+        case scale = "CFG Scale"
+        case ratio = "Aspect Ratio"
+        case sdxl = "HD"
+        case seed
+    }
+    
     @Environment(AppState.self) private var appState
     @Environment(ModelViewModel.self) private var modelViewModel
     @Bindable var viewModel: ImageViewModel
@@ -62,6 +54,10 @@ struct ImageGenerationView: View {
         }
         .onAppear() {
             viewModel.onModelChange()
+            appState.openedWindows.insert(.image)
+        }
+        .onDisappear() {
+            appState.openedWindows.remove(.image)
         }
         .monitorWindowFocus(for: .image, appState: appState)
     }

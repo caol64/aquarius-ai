@@ -10,6 +10,7 @@ import SwiftUI
 struct AppMenu: View {
     
     @Environment(\.openWindow) private var openWindow
+    @Environment(AppState.self) private var appState
 
     var body: some View {
         Button(Page.text.rawValue.capitalized) {
@@ -31,11 +32,15 @@ struct AppMenu: View {
     }
     
     func openTextGenerate() {
-        openWindow(id: Page.text.rawValue)
+        if !appState.openedWindows.contains(.text) {
+            openWindow(id: Page.text.rawValue)
+        }
         NSApp.activate(ignoringOtherApps: true)
     }
     func openImageGenerate() {
-        openWindow(id: Page.image.rawValue)
+        if !appState.openedWindows.contains(.image) {
+            openWindow(id: Page.image.rawValue)
+        }
         NSApp.activate(ignoringOtherApps: true)
     }
     func quit() {
