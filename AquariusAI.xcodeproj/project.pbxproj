@@ -21,6 +21,10 @@
 		AB835B652C6B219000FAC7DC /* View+WindowMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB835B642C6B219000FAC7DC /* View+WindowMonitor.swift */; };
 		AB93738C2C57A16A004947A0 /* UTType+MLmodel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB93738B2C57A16A004947A0 /* UTType+MLmodel.swift */; };
 		AB97714A2C636C0900C70334 /* BaseViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB9771492C636C0900C70334 /* BaseViewModel.swift */; };
+		ABA87F092C6C37710025B051 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = ABA87F082C6C37710025B051 /* LICENSE */; };
+		ABA87F0B2C6C37CC0025B051 /* README_zh.md in Resources */ = {isa = PBXBuildFile; fileRef = ABA87F0A2C6C37CC0025B051 /* README_zh.md */; };
+		ABA87F0F2C6C4C010025B051 /* 2.webp in Resources */ = {isa = PBXBuildFile; fileRef = ABA87F0D2C6C4C010025B051 /* 2.webp */; };
+		ABA87F102C6C4C010025B051 /* 1.webp in Resources */ = {isa = PBXBuildFile; fileRef = ABA87F0E2C6C4C010025B051 /* 1.webp */; };
 		ABB62FC12C6996E500A25EB1 /* ModelType.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB62FC02C6996E500A25EB1 /* ModelType.swift */; };
 		ABB62FC32C69A7C000A25EB1 /* SettingsPageState.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB62FC22C69A7C000A25EB1 /* SettingsPageState.swift */; };
 		ABB981CE2C52237D00AD94D9 /* TextGenerationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ABB981CD2C52237D00AD94D9 /* TextGenerationView.swift */; };
@@ -112,6 +116,10 @@
 		AB93738B2C57A16A004947A0 /* UTType+MLmodel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UTType+MLmodel.swift"; sourceTree = "<group>"; };
 		AB93738D2C57A465004947A0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		AB9771492C636C0900C70334 /* BaseViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BaseViewModel.swift; sourceTree = "<group>"; };
+		ABA87F082C6C37710025B051 /* LICENSE */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		ABA87F0A2C6C37CC0025B051 /* README_zh.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README_zh.md; sourceTree = "<group>"; };
+		ABA87F0D2C6C4C010025B051 /* 2.webp */ = {isa = PBXFileReference; lastKnownFileType = file; path = 2.webp; sourceTree = "<group>"; };
+		ABA87F0E2C6C4C010025B051 /* 1.webp */ = {isa = PBXFileReference; lastKnownFileType = file; path = 1.webp; sourceTree = "<group>"; };
 		ABB62FC02C6996E500A25EB1 /* ModelType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelType.swift; sourceTree = "<group>"; };
 		ABB62FC22C69A7C000A25EB1 /* SettingsPageState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsPageState.swift; sourceTree = "<group>"; };
 		ABB981CD2C52237D00AD94D9 /* TextGenerationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextGenerationView.swift; sourceTree = "<group>"; };
@@ -195,6 +203,15 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
+		ABA87F0C2C6C4BC70025B051 /* Data */ = {
+			isa = PBXGroup;
+			children = (
+				ABA87F0E2C6C4C010025B051 /* 1.webp */,
+				ABA87F0D2C6C4C010025B051 /* 2.webp */,
+			);
+			path = Data;
+			sourceTree = "<group>";
+		};
 		ABB62FBF2C69962500A25EB1 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -222,10 +239,13 @@
 		ABC1C07C2C4F61F100B579B3 = {
 			isa = PBXGroup;
 			children = (
+				ABA87F082C6C37710025B051 /* LICENSE */,
 				ABC1C0BE2C4F725700B579B3 /* README.md */,
+				ABA87F0A2C6C37CC0025B051 /* README_zh.md */,
 				ABC1C0872C4F61F100B579B3 /* AquariusAI */,
 				ABC1C09B2C4F61F300B579B3 /* AquariusAITests */,
 				ABC1C0A52C4F61F300B579B3 /* AquariusAIUITests */,
+				ABA87F0C2C6C4BC70025B051 /* Data */,
 				ABC1C0862C4F61F100B579B3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -491,8 +511,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ABA87F102C6C4C010025B051 /* 1.webp in Resources */,
 				ABC1C0BF2C4F725700B579B3 /* README.md in Resources */,
 				ABC1C0932C4F61F200B579B3 /* Preview Assets.xcassets in Resources */,
+				ABA87F0F2C6C4C010025B051 /* 2.webp in Resources */,
+				ABA87F092C6C37710025B051 /* LICENSE in Resources */,
+				ABA87F0B2C6C37CC0025B051 /* README_zh.md in Resources */,
 				ABC1C08F2C4F61F200B579B3 /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

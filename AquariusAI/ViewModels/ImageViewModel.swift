@@ -33,11 +33,11 @@ class ImageViewModel: BaseViewModel {
             handleError(error: AppError.promptEmpty)
             return
         }
-        status = ""
         guard let model = selectedModel else {
             handleError(error: AppError.missingModel)
             return
         }
+        status = ""
         Task {
             do {
                 generationState = .loading
