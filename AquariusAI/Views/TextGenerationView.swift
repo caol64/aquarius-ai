@@ -100,6 +100,8 @@ struct TextGenerationView: View {
             default:
                 ScrollView {
                     Markdown(viewModel.response)
+                        .markdownCodeSyntaxHighlighter(HighlightrCodeSyntaxHighlighter())
+                        .markdownTheme(markdownTheme)
                         .textSelection(.enabled)
                         .topAligned()
                         .padding()
@@ -126,6 +128,48 @@ struct TextGenerationView: View {
             .padding(.top, 4)
             .frame(height: 80)
             .font(.body)
+    }
+    
+    // MARK: - markdownTheme
+    @MainActor
+    private var markdownTheme: Theme {
+        Theme()
+            .code {
+                FontFamilyVariant(.monospaced)
+                FontSize(.em(0.85))
+                BackgroundColor(Color(hex: "#FAFAFA"))
+                ForegroundColor(Color(hex: "#8D8D8D"))
+            }
+            .codeBlock { configuration in
+                VStack(alignment: .leading) {
+                    HStack {
+                        Text(configuration.language?.capitalized ?? "")
+                            .foregroundStyle(Color(hex: "#8D8D8D"))
+                        
+                        Spacer()
+                        
+                        Button(action: {
+                            viewModel.onCodeblockCopy(code: configuration.content)
+                        }) {
+                            Label(viewModel.isCodeblockCopied ? "Copied!" : "Copy Code", systemImage: viewModel.isCodeblockCopied ? "checkmark" : "square.on.square.fill")
+                                .foregroundColor(Color(hex: "#8D8D8D"))
+                        }
+                        .buttonStyle(.plain)
+                        .cornerRadius(4)
+                    }
+                    .padding(.horizontal)
+                    .padding(.vertical, 8)
+                    .background(Color(hex: "#2F2F2F"))
+                    
+                    configuration.label
+                        .padding(.top, 8)
+                        .padding(.bottom)
+                        .padding(.horizontal)
+                        .monospaced()
+                }
+                .background(Color(hex: "#272822"))
+                .cornerRadius(8)
+            }
     }
 
 }

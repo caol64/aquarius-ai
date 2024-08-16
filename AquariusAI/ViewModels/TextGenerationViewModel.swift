@@ -29,6 +29,7 @@ class TextGenerationViewModel: BaseViewModel {
     var knowledge: Knowledges?
     var expandId: String?
     var isCopied = false
+    var isCodeblockCopied = false
     var generationState: GenerationState = .startup
     
     func closeModelListPopup() {
@@ -76,6 +77,20 @@ class TextGenerationViewModel: BaseViewModel {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             withAnimation {
                 self.isCopied = false
+            }
+        }
+    }
+    
+    func onCodeblockCopy(code: String) {
+        let pasteBoard = NSPasteboard.general
+        pasteBoard.clearContents()
+        pasteBoard.setString(code, forType: .string)
+        
+        isCodeblockCopied = true
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            withAnimation {
+                self.isCodeblockCopied = false
             }
         }
     }
