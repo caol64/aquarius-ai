@@ -21,7 +21,7 @@ struct GenerationParameterGroup: View {
     
     var body: some View {
         Group {
-            intSlideGroup(id: Groups.context.rawValue, expandId: $expandId, setting: $config.contextLength, range: 2048...8192, step: 1)
+            intSlideGroup(id: Groups.context.rawValue, expandId: $expandId, setting: $config.contextLength, range: 2048...131072, step: 1)
             doubleSlideGroup(id: Groups.temperature.rawValue, expandId: $expandId, setting: $config.temperature, range: 0...2, step: 0.1, precision: "%.1f")
             intSlideGroup(id: Groups.seed.rawValue, expandId: $expandId, setting: $config.seed, range: -1...65535, step: 1)
             doubleSlideGroup(id: Groups.repeatPenalty.rawValue, expandId: $expandId, setting: $config.repeatPenalty, range: 0...2, step: 0.1, precision: "%.1f")

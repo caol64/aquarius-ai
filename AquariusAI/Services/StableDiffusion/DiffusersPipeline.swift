@@ -30,8 +30,7 @@ class DiffusersPipeline {
     private func loadModel(modelDirectory: URL) async throws -> TimeInterval {
         let startTime = Date()
         let config = MLModelConfiguration()
-        let computeUnits: MLComputeUnits = .cpuAndGPU
-        config.computeUnits = computeUnits
+        config.computeUnits = MLComputeUnits.cpuAndGPU
         if diffusersConfig.isXL {
             if #available(macOS 14.0, iOS 17.0, *) {
                 pipeline = try StableDiffusionXLPipeline(resourcesAt: modelDirectory,

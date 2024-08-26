@@ -1,3 +1,7 @@
+<div align="center">
+    <img alt = "logo" src="Data/256-mac.png" />
+</div>
+
 # AquariusAI
 
 English | [中文](README_zh.md)
