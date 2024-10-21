@@ -9,12 +9,12 @@ import SwiftUI
 
 struct IntHideStepSlider: View {
     @Binding var value: Int
-    var range: ClosedRange<Double>
-    var step: Double
+    var range: ClosedRange<Float>
+    var step: Float
     
     var body: some View {
         HideStepSlider(value: Binding(get: {
-            Double(value)
+            Float(value)
         }, set: { newValue in
             value = Int(newValue)
         }), range: range, step: step)

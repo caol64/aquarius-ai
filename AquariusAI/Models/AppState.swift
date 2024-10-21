@@ -11,14 +11,14 @@ import SwiftUI
 @Observable
 class AppState {
     var activatedPage: Page?
-    var appError: AppError?
+    static var appError: AppError?
     
     var showError: Binding<Bool> {
         Binding {
-            return self.appError != nil
+            return AppState.appError != nil
         } set: { showError in
             if !showError {
-                self.appError = nil
+                AppState.appError = nil
             }
         }
     }
@@ -30,31 +30,35 @@ class AppState {
 
     var showSettingsError: Binding<Bool> {
         Binding {
-            return self.appError != nil && self.activatedPage == .settings
+            return AppState.appError != nil && self.activatedPage == .settings
         } set: { showError in
             if !showError {
-                self.appError = nil
+                AppState.appError = nil
             }
         }
     }
     
     var showTextError: Binding<Bool> {
         Binding {
-            return self.appError != nil && self.activatedPage == .text
+            return AppState.appError != nil && self.activatedPage == .text
         } set: { showError in
             if !showError {
-                self.appError = nil
+                AppState.appError = nil
             }
         }
     }
     
     var showImageError: Binding<Bool> {
         Binding {
-            return self.appError != nil && self.activatedPage == .image
+            return AppState.appError != nil && self.activatedPage == .image
         } set: { showError in
             if !showError {
-                self.appError = nil
+                AppState.appError = nil
             }
         }
+    }
+    
+    var error: AppError? {
+        return AppState.appError
     }
 }

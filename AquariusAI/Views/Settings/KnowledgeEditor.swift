@@ -10,7 +10,7 @@ import SwiftUI
 struct KnowledgeEditor: View {
     @Environment(KnowledgeViewModel.self) private var knowledgeViewModel
     @Environment(ModelViewModel.self) private var modelViewModel
-    @Bindable var knowledge: Knowledges
+    @Bindable var knowledge: Knowledge
     @State private var showFileImporter: Bool = false
     private let chunkSizes = [256, 512, 1024, 2048, 4096, 8192]
     
@@ -55,7 +55,7 @@ struct KnowledgeEditor: View {
                 .padding(.top, 4)
                 
                 Picker("Embedding Model", selection: $knowledge.embedModel) {
-                    ForEach(modelViewModel.fetch(modelType: .embedding), id: \.self) { model in
+                    ForEach(modelViewModel.fetch(modelType: .text), id: \.self) { model in
                         Text(model.name)
                             .lineLimit(1)
                             .tag(Optional(model))

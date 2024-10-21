@@ -9,7 +9,7 @@ import SwiftUI
 
 struct KnowledgeSetupGroup: View {
     @Binding var expandId: String?
-    @Binding var knowledge: Knowledges?
+    @Binding var knowledge: Knowledge?
     @State private var showKnowledgeSheet = false
     
     var body: some View {

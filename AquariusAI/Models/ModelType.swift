@@ -8,23 +8,23 @@
 import Foundation
 
 enum ModelType: String, CaseIterable, Identifiable, Codable {
-    case llm = "Language Model"
-    case embedding = "Embedding Model"
-    case diffusers = "Diffusers Model"
-    case esrgan = "Esrgan Model"
+    case text = "Text"
+    case image = "Image"
+    case embedding = "Embedding"
+    case upscale = "Upscale"
     
     var id: Self { self }
     
     var supportedFamily: [ModelFamily] {
         switch self {
-        case .llm:
-            return [.ollama, .gpt, .gemini]
+        case .text:
+            return [.huggingface]
+        case .image:
+            return [.coreml]
         case .embedding:
-            return [.ollama, .gpt, .gemini]
-        case .diffusers:
-            return [.mlmodel]
-        case .esrgan:
-            return [.mlmodel]
+            return [.huggingface]
+        case .upscale:
+            return [.huggingface]
         }
     }
 }

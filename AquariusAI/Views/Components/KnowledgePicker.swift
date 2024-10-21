@@ -10,7 +10,7 @@ import SwiftUI
 struct KnowledgePicker: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(KnowledgeViewModel.self) private var knowledgeViewModel
-    @Binding var knowledge: Knowledges?
+    @Binding var knowledge: Knowledge?
     
     var body: some View {
         VStack {

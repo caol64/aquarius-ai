@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ModelListPopup: View {
     @Environment(ModelViewModel.self) private var modelViewModel
-    @Binding var model: Models?
+    @Binding var model: Mlmodel?
     @State private var menuWidth: CGFloat = 400
     @State private var menuHeight: CGFloat = 150
     var modelType: ModelType

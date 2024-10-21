@@ -10,10 +10,12 @@ import SwiftData
 
 @Observable
 class ModelViewModel: BaseViewModel {
+    let dataRepository: DataRepository
     var models: [Mlmodel] = []
     
-    override init(errorBinding: ErrorBinding, modelContext: ModelContext) {
-        super.init(errorBinding: errorBinding, modelContext: modelContext)
+    init(dataRepository: DataRepository) {
+        self.dataRepository = dataRepository
+        super.init()
         _fetch()
     }
     
@@ -22,7 +24,9 @@ class ModelViewModel: BaseViewModel {
             let descriptor = FetchDescriptor<Mlmodel>(
                 sortBy: [SortDescriptor(\Mlmodel.createdAt, order: .forward)]
             )
-            models = _fetch(descriptor: descriptor)
+            models = dataRepository.fetch(descriptor: descriptor) { error in
+                handleError(error: error)
+            }
         }
     }
     
@@ -36,14 +40,14 @@ class ModelViewModel: BaseViewModel {
     
     func onAdd(modelType: ModelType) -> Mlmodel {
         let model = Mlmodel(name: "new model", type: modelType)
-        save(model)
+        dataRepository.save(model)
         _fetch()
         return model
     }
     
     func onDelete(model: Mlmodel?) {
         if let model = model {
-            delete(model)
+            dataRepository.delete(model)
             _fetch()
         }
     }
@@ -59,6 +63,7 @@ class ModelViewModel: BaseViewModel {
     
     func handleModelPath(model: Mlmodel, directory: URL) {
         model.name = directory.lastPathComponent
+        model.localPath = directory.path()
         let gotAccess = directory.startAccessingSecurityScopedResource()
         defer {
             directory.stopAccessingSecurityScopedResource()

@@ -9,17 +9,12 @@ import Foundation
 import SwiftData
 
 class BaseViewModel {
-    let appState: AppState
-    
-    init(appState: AppState) {
-        self.appState = appState
-    }
     
     func handleError(error: Error) {
         if let error = error as? AppError {
-            appState.appError = error
+            AppState.appError = error
         } else {
-            appState.appError = AppError.unexpected(description: error.localizedDescription)
+            AppState.appError = AppError.unexpected(description: error.localizedDescription)
         }
     }
     

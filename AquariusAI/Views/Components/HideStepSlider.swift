@@ -8,9 +8,9 @@
 import SwiftUI
 
 struct HideStepSlider: View {
-    @Binding var value: Double
-    var range: ClosedRange<Double>
-    var step: Double
+    @Binding var value: Float
+    var range: ClosedRange<Float>
+    var step: Float
     
     var body: some View {
         Slider(value: Binding(

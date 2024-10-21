@@ -10,11 +10,13 @@ import SwiftData
 
 @Observable
 class KnowledgeViewModel: BaseViewModel {
+    let dataRepository: DataRepository
     var knowledges: [Knowledge] = []
     var isBuilding = false
     
-    override init(errorBinding: ErrorBinding, modelContext: ModelContext) {
-        super.init(errorBinding: errorBinding, modelContext: modelContext)
+    init(dataRepository: DataRepository) {
+        self.dataRepository = dataRepository
+        super.init()
         fetch()
     }
     
@@ -23,20 +25,22 @@ class KnowledgeViewModel: BaseViewModel {
             let descriptor = FetchDescriptor<Knowledge>(
                 sortBy: [SortDescriptor(\Knowledge.createdAt, order: .forward)]
             )
-            knowledges = _fetch(descriptor: descriptor)
+            knowledges = dataRepository.fetch(descriptor: descriptor) { error in
+                handleError(error: error)
+            }
         }
     }
     
     func onAdd() -> Knowledge {
         let knowledge = Knowledge(name: "new knowledge")
-        save(knowledge)
+        dataRepository.save(knowledge)
         fetch()
         return knowledge
     }
     
     func onDelete(_ knowledge: Knowledge?) {
         if let knowledge = knowledge {
-            delete(knowledge)
+            dataRepository.delete(knowledge)
             fetch()
         }
     }

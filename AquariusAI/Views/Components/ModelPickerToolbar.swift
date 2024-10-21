@@ -9,7 +9,7 @@ import SwiftUI
 
 struct ModelPickerToolbar: ToolbarContent {
     @Environment(ModelViewModel.self) private var modelViewModel
-    @Binding var model: Models?
+    @Binding var model: Mlmodel?
     @Binding var showModelPicker: Bool
     var title: String = "Aquarius AI"
     var modelType: ModelType

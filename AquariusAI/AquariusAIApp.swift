@@ -10,20 +10,20 @@ import SwiftData
 
 @main
 struct AquariusAIApp: App {
-    @State private var appState: AppState
+    @State private var appState: AppState = .init()
     @State private var modelViewModel: ModelViewModel
     @State private var knowledgeViewModel: KnowledgeViewModel
-    @State private var textGenerationViewModel: TextGenerationViewModel
-    @State private var imageViewModel: ImageViewModel
-
+    @State private var textGenerationViewModel: TextGenerationViewModel = .init()
+    @State private var imageGenerationViewModel: ImageGenerationViewModel = .init()
+    
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Models.self,
-            Knowledges.self,
+            Mlmodel.self,
+            Knowledge.self,
         ])
-
+        
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
+        
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
@@ -33,43 +33,42 @@ struct AquariusAIApp: App {
     
     init() {
         let modelContext = sharedModelContainer.mainContext
-        let appState = AppState()
-        _appState = State(initialValue: appState)
-        modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
-        knowledgeViewModel = KnowledgeViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
-        textGenerationViewModel = TextGenerationViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
-        imageViewModel = ImageViewModel(errorBinding: appState.errorBinding, modelContext: modelContext)
+        let dataRepository = DataRepository(modelContext: modelContext)
+        modelViewModel = ModelViewModel(dataRepository: dataRepository)
+        knowledgeViewModel = KnowledgeViewModel(dataRepository: dataRepository)
     }
-
+    
     var body: some Scene {
-        #if os(macOS)
+#if os(macOS)
         MenuBarExtra("Aquarius AI", image: "MenubarIcon") {
             AppMenu()
                 .environment(appState)
         }
-
+        
         Settings {
             SettingsView()
                 .environment(appState)
                 .environment(modelViewModel)
                 .environment(knowledgeViewModel)
-                .alert(isPresented: appState.showSettingsError, error: appState.errorBinding.appError) {}
+                .alert(isPresented: appState.showSettingsError, error: appState.error) {}
         }
-        #endif
+#endif
         
         WindowGroup(id: Page.text.rawValue) {
-            TextGenerationView(viewModel: textGenerationViewModel)
+            TextGenerationView()
                 .environment(appState)
+                .environment(textGenerationViewModel)
                 .environment(modelViewModel)
                 .environment(knowledgeViewModel)
-                .alert(isPresented: appState.showTextError, error: appState.errorBinding.appError) {}
+                .alert(isPresented: appState.showTextError, error: appState.error) {}
         }
         
         WindowGroup(id: Page.image.rawValue) {
-            ImageGenerationView(viewModel: imageViewModel)
+            ImageGenerationView()
                 .environment(appState)
+                .environment(imageGenerationViewModel)
                 .environment(modelViewModel)
-                .alert(isPresented: appState.showImageError, error: appState.errorBinding.appError) {}
+                .alert(isPresented: appState.showImageError, error: appState.error) {}
         }
     }
 }

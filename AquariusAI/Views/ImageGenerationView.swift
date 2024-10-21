@@ -19,15 +19,12 @@ struct ImageGenerationView: View {
     
     @Environment(AppState.self) private var appState
     @Environment(ModelViewModel.self) private var modelViewModel
-    @Bindable var viewModel: ImageViewModel
-    private var modelType: ModelType = .diffusers
+    @Environment(ImageGenerationViewModel.self) private var viewModel
+    private let modelType: ModelType = .image
     private let title = "Image Generation"
     
-    init(viewModel: ImageViewModel) {
-        self.viewModel = viewModel
-    }
-    
     var body: some View {
+        @Bindable var viewModel = viewModel
         NavigationSplitView {
             sidebar
                 .topAligned()
@@ -38,11 +35,11 @@ struct ImageGenerationView: View {
                 .navigationTitle("")
                 .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
                 .toolbar {
-                    ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .diffusers)
+                    ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .image)
                 }
                 .overlay(alignment: .top) {
                     if viewModel.showModelPicker {
-                        ModelListPopup(model: $viewModel.selectedModel, modelType: .diffusers)
+                        ModelListPopup(model: $viewModel.selectedModel, modelType: .image)
                     }
                 }
         }
@@ -66,6 +63,7 @@ struct ImageGenerationView: View {
     @ViewBuilder
     @MainActor
     private var sidebar: some View {
+        @Bindable var viewModel = viewModel
         generationOptions()
         ScrollView {
             prompts
@@ -94,7 +92,7 @@ struct ImageGenerationView: View {
         VStack(spacing: 0) {
             Spacer()
             switch viewModel.generationState {
-            case .startup:
+            case .ready:
                 ContentUnavailableView {
                     Text("How are you today?")
                 }
@@ -103,9 +101,6 @@ struct ImageGenerationView: View {
                 ContentUnavailableView {
                     Image(systemName: "exclamationmark.triangle")
                 }
-            case .loading:
-                ProgressView()
-                    .frame(width: 512, height: 512)
             case .running(let image):
                 if let preview = image {
                     previewView(image: preview)
@@ -123,6 +118,7 @@ struct ImageGenerationView: View {
     // MARK: - prompts
     @ViewBuilder
     private var prompts: some View {
+        @Bindable var viewModel = viewModel
         Text("Prompt")
             .leftAligned()
         TextEditor(text: $viewModel.prompt)
@@ -139,17 +135,20 @@ struct ImageGenerationView: View {
     
     // MARK: - stepGroup
     private func stepGroup(config: Binding<DiffusersConfig>) -> some View {
-        intSlideGroup(id: Groups.steps.rawValue, expandId: $viewModel.expandId, setting: $viewModel.config.stepCount, range: 1...50, step: 1)
+        @Bindable var viewModel = viewModel
+        return intSlideGroup(id: Groups.steps.rawValue, expandId: $viewModel.expandId, setting: $viewModel.config.stepCount, range: 1...50, step: 1)
     }
     
     // MARK: - scaleGroup
     private func scaleGroup(config: Binding<DiffusersConfig>) -> some View {
-        doubleSlideGroup(id: Groups.scale.rawValue, expandId: $viewModel.expandId, setting: $viewModel.config.cfgScale, range: 1...30, step: 0.5, precision: "%.1f")
+        @Bindable var viewModel = viewModel
+        return slideGroup(id: Groups.scale.rawValue, expandId: $viewModel.expandId, setting: $viewModel.config.cfgScale, range: 1...30, step: 0.5, precision: "%.1f")
     }
     
     // MARK: - ratioGroup
     private func ratioGroup(config: Binding<DiffusersConfig>) -> some View {
-        exclusiveExpandGroup(id: Groups.ratio.rawValue, expandId: $viewModel.expandId) {
+        @Bindable var viewModel = viewModel
+        return exclusiveExpandGroup(id: Groups.ratio.rawValue, expandId: $viewModel.expandId) {
             Picker("", selection: $viewModel.config.imageRatio) {
                 ForEach(ImageRatio.allCases) { ratio in
                     Text(ratio.rawValue)
@@ -174,12 +173,14 @@ struct ImageGenerationView: View {
     
     // MARK: - seedGroup
     private func seedGroup(config: Binding<DiffusersConfig>) -> some View {
-        intSlideGroup(id: Groups.seed.rawValue, expandId: $viewModel.expandId, setting: $viewModel.config.seed, range: -1...65535, step: 1)
+        @Bindable var viewModel = viewModel
+        return intSlideGroup(id: Groups.seed.rawValue, expandId: $viewModel.expandId, setting: $viewModel.config.seed, range: -1...65535, step: 1)
     }
     
     // MARK: - sdxlGroup
     private func sdxlGroup(config: Binding<DiffusersConfig>) -> some View {
-        HStack {
+        @Bindable var viewModel = viewModel
+        return HStack {
             Text(Groups.sdxl.rawValue)
             Spacer()
             Toggle("", isOn: $viewModel.config.isXL)
@@ -202,11 +203,6 @@ struct ImageGenerationView: View {
                 Button("Cancel") {
                     viewModel.onCancel()
                 }
-                .frame(width: 100)
-            } else if case .loading = viewModel.generationState {
-                Button("Generate") {
-                }
-                .disabled(true)
                 .frame(width: 100)
             } else {
                 Button("Generate") {
@@ -253,8 +249,9 @@ struct ImageGenerationView: View {
     // MARK: - toolBar
     @MainActor
     private func toolBar(image: CGImage) -> some ToolbarContent {
-        ToolbarItemGroup {
-            if let model = modelViewModel.fetch(modelType: .esrgan).first {
+        @Bindable var viewModel = viewModel
+        return ToolbarItemGroup {
+            if let model = modelViewModel.fetch(modelType: .upscale).first {
                 Button("Upscale", systemImage: "plus.magnifyingglass") {
                     viewModel.onUpscale(image: image, model: model)
                 }
@@ -284,14 +281,14 @@ struct ImageGenerationView: View {
 // MARK: - Preview
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Schema([Models.self]), configurations: config)
-    container.mainContext.insert(Models(name: "qwen7b", family: .mlmodel, type: .diffusers))
-    container.mainContext.insert(Models(name: "qwen7b", family: .mlmodel, type: .diffusers))
+    let container = try! ModelContainer(for: Schema([Mlmodel.self]), configurations: config)
+    container.mainContext.insert(Mlmodel(name: "qwen7b"))
+    container.mainContext.insert(Mlmodel(name: "qwen7b"))
     let appState = AppState()
-    let modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
-    @State var viewModel = ImageViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
+    let dataRepository = DataRepository(modelContext: container.mainContext)
+    let modelViewModel = ModelViewModel(dataRepository: dataRepository)
     
-    return ImageGenerationView(viewModel: viewModel)
+    return ImageGenerationView()
+        .environment(appState)
         .environment(modelViewModel)
-        .environment(viewModel)
 }

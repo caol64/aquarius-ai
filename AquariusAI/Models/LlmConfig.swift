@@ -11,9 +11,9 @@ import Foundation
 class LlmConfig {
     var rawInstruct: Bool = false
     var contextLength: Int = 2048
-    var temperature: Double = 0.8
+    var temperature: Float = 0.8
     var seed: Int = -1
-    var repeatPenalty: Double = 1.1
+    var repeatPenalty: Float = 1.1
     var topK: Int = 40
-    var topP: Double = 0.9
+    var topP: Float = 0.9
 }

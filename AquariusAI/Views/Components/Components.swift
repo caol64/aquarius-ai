@@ -30,7 +30,7 @@ func exclusiveExpandGroup<T: Equatable>(id: T,
     }
 }
 
-func doubleSlideGroup(id: String, expandId: Binding<String?>, setting: Binding<Double>, range: ClosedRange<Double>, step: Double, precision: String) -> some View {
+func slideGroup(id: String, expandId: Binding<String?>, setting: Binding<Float>, range: ClosedRange<Float>, step: Float, precision: String) -> some View {
     exclusiveExpandGroup(id: id, expandId: expandId) {
         HideStepSlider(value: setting, range: range, step: step)
     } label: {
@@ -48,7 +48,7 @@ func doubleSlideGroup(id: String, expandId: Binding<String?>, setting: Binding<D
     }
 }
 
-func intSlideGroup(id: String, expandId: Binding<String?>, setting: Binding<Int>, range: ClosedRange<Double>, step: Double) -> some View {
+func intSlideGroup(id: String, expandId: Binding<String?>, setting: Binding<Int>, range: ClosedRange<Float>, step: Float) -> some View {
     exclusiveExpandGroup(id: id, expandId: expandId) {
         IntHideStepSlider(value: setting, range: range, step: step)
     } label: {

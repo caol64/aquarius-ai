@@ -8,8 +8,9 @@
 import Foundation
 
 enum ModelFamily: String, CaseIterable, Identifiable, Codable {
-    case transformer = "transformer"
-    case stableDiffusion = "stable diffusion"
+    case coreml = "CoreML"
+    case huggingface = "Hugging Face"
+    case ollama = "Ollama"
     
     var id: Self { self }
     

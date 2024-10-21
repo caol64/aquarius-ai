@@ -13,40 +13,19 @@ import CoreGraphics.CGImage
 class Mlmodel: Identifiable {
     @Attribute(.unique) var id: String = UUID().uuidString
     var name: String
+    var family: ModelFamily
     var type: ModelType
+    var localPath: String = ""
     var createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
     var bookmark: Data?
     
-    init(name: String, type: ModelType? = .llm) {
+    init(name: String, family: ModelFamily? = .huggingface, type: ModelType? = .text) {
         self.name = name
-        self.type = type ?? .llm
+        self.family = family ?? .huggingface
+        self.type = type ?? .text
     }
     
-}
-
-// MARK: - content generation
-extension Mlmodel {
-    func generate<C, P, R>(prompt: String,
-                           systemPrompt: String,
-                           config: C?,
-                           onLoad: @escaping (_ interval: TimeInterval) -> Void,
-                           onProgress: @escaping (_ progress: P?) -> Void,
-                           onComplete: @escaping (_ response: R?, _ interval: TimeInterval) -> Void,
-                           onError: @escaping (_ error: AppError) -> Void) async throws {
-        if self.type == .diffusers {
-            let pipeline = DiffusersPipeline(model: self, diffusersConfig: config as! DiffusersConfig)
-            try await pipeline.generate(prompt: prompt, negativePrompt: systemPrompt) { interval in
-                onLoad(interval)
-            } onGenerateComplete: { data, interval in
-                onComplete(data as? R, interval)
-            } onProgress: { progress in
-                onProgress(progress as? P)
-            }
-        } else {
-            throw AppError.bizError(description: "Not implemented.")
-        }
-    }
 }
 
 // MARK: - embedding
@@ -59,12 +38,8 @@ extension Mlmodel {
 // MARK: - upscale
 extension Mlmodel {
     func upscale(image: CGImage) async throws -> CGImage {
-        if self.type == .esrgan {
-            let model = RealEsrgan(model: self)
-            let result = try await model.upscale(image: image)
-            return result
-        } else {
-            throw AppError.bizError(description: "Not implemented.")
-        }
+        let model = RealEsrgan(model: self)
+        let result = try await model.upscale(image: image)
+        return result
     }
 }

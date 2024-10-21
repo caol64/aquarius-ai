@@ -10,10 +10,10 @@ import SwiftData
 
 struct ModelSettingsView: View {
     @Environment(ModelViewModel.self) private var modelViewModel
-    @State private var selectedModelType: ModelType = .llm
-    @State private var selectedModel: Models?
+    @State private var selectedModelType: ModelType = .text
+    @State private var selectedModel: Mlmodel?
     @State private var showConfirmView = false
-    @State private var pageState: SettingsPageState<Models> = .empty
+    @State private var pageState: SettingsPageState<Mlmodel> = .empty
     
     var body: some View {
         VStack {
@@ -130,10 +130,13 @@ struct ModelSettingsView: View {
 
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Models.self, configurations: config)
-    container.mainContext.insert(Models(name: "sd3", family: .mlmodel, type: .diffusers))
-    container.mainContext.insert(Models(name: "qwen7b", family: .ollama))
-    
+    let container = try! ModelContainer(for: Mlmodel.self, configurations: config)
+    container.mainContext.insert(Mlmodel(name: "sd3"))
+    container.mainContext.insert(Mlmodel(name: "qwen7b"))
+    let appState = AppState()
+    let dataRepository = DataRepository(modelContext: container.mainContext)
+    let modelViewModel = ModelViewModel(dataRepository: dataRepository)
     return ModelSettingsView()
-        .environment(ModelViewModel(errorBinding: ErrorBinding(), modelContext: container.mainContext))
+        .environment(appState)
+        .environment(modelViewModel)
 }

@@ -11,8 +11,8 @@ import SwiftData
 struct KnowledgeSettingsView: View {
     @Environment(KnowledgeViewModel.self) private var knowledgeViewModel
     @State private var showConfirmView = false
-    @State private var selectedKnowledge: Knowledges?
-    @State private var pageState: SettingsPageState<Knowledges> = .empty
+    @State private var selectedKnowledge: Knowledge?
+    @State private var pageState: SettingsPageState<Knowledge> = .empty
     
     var body: some View {
         VStack {
@@ -108,10 +108,13 @@ struct KnowledgeSettingsView: View {
 
 #Preview {
     let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Knowledges.self, configurations: config)
-    container.mainContext.insert(Knowledges(name: "The Lord of the Rings"))
-    container.mainContext.insert(Knowledges(name: "Linux Cookbook"))
-    
+    let container = try! ModelContainer(for: Knowledge.self, configurations: config)
+    container.mainContext.insert(Knowledge(name: "The Lord of the Rings"))
+    container.mainContext.insert(Knowledge(name: "Linux Cookbook"))
+    let dataRepository = DataRepository(modelContext: container.mainContext)
+    let appState = AppState()
+    let modelViewModel = ModelViewModel(dataRepository: dataRepository)
     return KnowledgeSettingsView()
-        .environment(KnowledgeViewModel(errorBinding: ErrorBinding(), modelContext: container.mainContext))
+        .environment(appState)
+        .environment(modelViewModel)
 }

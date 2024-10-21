@@ -11,7 +11,7 @@ struct ModelEditor: View {
     @Environment(ModelViewModel.self) private var modelViewModel
     @State private var showFileImporter: Bool = false
     @State private var remoteModels: [String] = []
-    @Bindable var model: Models
+    @Bindable var model: Mlmodel
     
     var body: some View {
         VStack {
@@ -27,55 +27,20 @@ struct ModelEditor: View {
                 }
                 .padding(.top, 4)
                 
-                if model.family.needAppKey {
-                    TextField("AppKey", text: $model.appkey ?? "")
+                HStack(alignment: .bottom) {
+                    TextField("Local Path", text: $model.localPath)
                         .padding(.top, 4)
-                }
-                
-                if !model.family.isLocal {
-                    HStack(alignment: .bottom) {
-                        TextField("Host", text: $model.host)
-                            .padding(.top, 4)
-                        
-                        Button("Refresh...") {
-                            onSync()
-                        }
-                    }
+                        .disabled(true)
                     
-                    Picker("Model", selection: $model.endpoint) {
-                        ForEach(remoteModels, id: \.self) { model in
-                            Text(model)
-                                .lineLimit(1)
-                                .tag(Optional(model))
-                        }
+                    Button("Select...") {
+                        showFileImporter = true
                     }
-                    .onChange(of: model.endpoint) {
-                        if let endpoint = model.endpoint {
-                            model.name = endpoint
-                        }
-                    }
-                    .onChange(of: remoteModels) {
-                        if let remoteModel = remoteModels.first, model.endpoint == nil {
-                            model.endpoint = remoteModel
-                        }
-                    }
-                    .padding(.top, 4)
-                } else {
-                    HStack(alignment: .bottom) {
-                        TextField("Local Path", text: $model.endpoint ?? "")
-                            .padding(.top, 4)
-                            .disabled(true)
-                        
-                        Button("Select...") {
-                            showFileImporter = true
-                        }
-                        .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.folder, .mlmodel, .mlmodelc]) { result in
-                            switch result {
-                            case .success(let directory):
-                                modelViewModel.handleModelPath(model: model, directory: directory)
-                            case .failure(let error):
-                                modelViewModel.handleError(error: error)
-                            }
+                    .fileImporter(isPresented: $showFileImporter, allowedContentTypes: [.folder, .mlmodel, .mlmodelc]) { result in
+                        switch result {
+                        case .success(let directory):
+                            modelViewModel.handleModelPath(model: model, directory: directory)
+                        case .failure(let error):
+                            modelViewModel.handleError(error: error)
                         }
                     }
                 }
@@ -84,17 +49,6 @@ struct ModelEditor: View {
                 
             }
             .padding()
-        }
-    }
-    
-    // MARK: - Actions
-    private func onSync() {
-        Task {
-            do {
-                remoteModels = try await model.sync()
-            } catch {
-                await modelViewModel.handleError(error: error)
-            }
         }
     }
     

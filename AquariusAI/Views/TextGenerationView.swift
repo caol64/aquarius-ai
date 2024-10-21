@@ -11,10 +11,11 @@ import MarkdownUI
 
 struct TextGenerationView: View {
     @Environment(AppState.self) private var appState
-    @Bindable var viewModel: TextGenerationViewModel
+    @Environment(TextGenerationViewModel.self) private var viewModel
     let title = "Text Generation"
 
     var body: some View {
+        @Bindable var viewModel = viewModel
         NavigationSplitView {
             sidebar
                 .topAligned()
@@ -25,7 +26,7 @@ struct TextGenerationView: View {
                 .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
                 .navigationTitle("")
                 .toolbar {
-                    ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .llm)
+                    ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .text)
                     ToolbarItemGroup {
                         Button("Copy", systemImage: viewModel.isCopied ? "checkmark" : "clipboard") {
                             viewModel.onCopy()
@@ -34,7 +35,7 @@ struct TextGenerationView: View {
                 }
                 .overlay(alignment: .top) {
                     if viewModel.showModelPicker {
-                        ModelListPopup(model: $viewModel.selectedModel, modelType: .llm)
+                        ModelListPopup(model: $viewModel.selectedModel, modelType: .text)
                     }
                 }
         }
@@ -55,6 +56,7 @@ struct TextGenerationView: View {
     @ViewBuilder
     @MainActor
     private var sidebar: some View {
+        @Bindable var viewModel = viewModel
         generationOptions()
         ScrollView {
             prompts
@@ -68,11 +70,6 @@ struct TextGenerationView: View {
                 Button("Cancel") {
                     
                 }
-                .frame(width: 100)
-            } else if case .preparing = viewModel.generationState {
-                Button("Generate") {
-                }
-                .disabled(true)
                 .frame(width: 100)
             } else {
                 Button("Generate") {
@@ -91,23 +88,18 @@ struct TextGenerationView: View {
     private var contentView: some View {
         VStack(spacing: 0) {
             switch viewModel.generationState {
-            case .startup:
+            case .running(let text):
+                if let text = text {
+                    markdownView(text: text)
+                }
+            case .complete(_):
+                markdownView(text: viewModel.response)
+            default:
                 Spacer()
                 ContentUnavailableView {
                     Text("How are you today?")
                 }
                 Spacer()
-            default:
-                ScrollView {
-                    Markdown(viewModel.response)
-                        .markdownCodeSyntaxHighlighter(HighlightrCodeSyntaxHighlighter())
-                        .markdownTheme(markdownTheme)
-                        .textSelection(.enabled)
-                        .topAligned()
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .background(.white)
             }
         }
     }
@@ -115,6 +107,7 @@ struct TextGenerationView: View {
     // MARK: - prompts
     @ViewBuilder
     private var prompts: some View {
+        @Bindable var viewModel = viewModel
         Text("Prompt")
             .leftAligned()
         TextEditor(text: $viewModel.prompt)
@@ -171,21 +164,19 @@ struct TextGenerationView: View {
                 .cornerRadius(8)
             }
     }
-
-}
-
-// MARK: - Preview
-#Preview {
-    let config = ModelConfiguration(isStoredInMemoryOnly: true)
-    let container = try! ModelContainer(for: Models.self, configurations: config)
-    container.mainContext.insert(Models(name: "qwen7b", family: .ollama))
-    let appState = AppState()
-    let modelViewModel = ModelViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
-    let knowledgeViewModel = KnowledgeViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
-    @State var viewModel = TextGenerationViewModel(errorBinding: appState.errorBinding, modelContext: container.mainContext)
     
-    return TextGenerationView(viewModel: viewModel)
-        .environment(modelViewModel)
-        .environment(knowledgeViewModel)
-        .environment(viewModel)
+    // MARK: - markdownView
+    private func markdownView(text: String) -> some View {
+        ScrollView {
+            Markdown(text)
+                .markdownCodeSyntaxHighlighter(HighlightrCodeSyntaxHighlighter())
+                .markdownTheme(markdownTheme)
+                .textSelection(.enabled)
+                .topAligned()
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .background(.white)
+    }
+
 }
