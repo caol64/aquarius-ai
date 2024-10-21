@@ -1,5 +1,5 @@
 //
-//  Knowledges.swift
+//  Knowledge.swift
 //  AquariusAI
 //
 //  Created by Lei Cao on 2024/8/2.
@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-class Knowledges: Identifiable {
+class Knowledge: Identifiable {
     @Attribute(.unique) var id: String = UUID().uuidString
     var name: String
     var file: String?
@@ -22,7 +22,7 @@ class Knowledges: Identifiable {
     var createdAt: Date = Date.now
     var modifiedAt: Date = Date.now
     var bookmark: Data?
-    var embedModel: Models?
+    var embedModel: Mlmodel?
     @Transient var chunks: [String] = []
     @Transient var embeddings: [[Double]] = []
     
@@ -33,8 +33,8 @@ class Knowledges: Identifiable {
     }
 }
 
-extension Knowledges {
-    func buildIndex(embedModel: Models) async throws {
+extension Knowledge {
+    func buildIndex(embedModel: Mlmodel) async throws {
         var modelDirectory: URL?
         if let data = self.bookmark {
             modelDirectory = restoreFileAccess(with: data) { data in
@@ -61,7 +61,7 @@ extension Knowledges {
     }
 }
 
-extension Knowledges {
+extension Knowledge {
     func ragByKnowledge(prompt: String) async throws -> String {
         if self.status != .completed {
             throw AppError.bizError(description: "Knowledge is not completely configured.")

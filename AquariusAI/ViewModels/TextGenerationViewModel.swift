@@ -22,11 +22,11 @@ class TextGenerationViewModel: BaseViewModel {
     
     var prompt: String = ""
     var systemPrompt: String = ""
-    var selectedModel: Models?
+    var selectedModel: Mlmodel?
     var response: String = ""
     var showModelPicker = false
     var config: LlmConfig = LlmConfig()
-    var knowledge: Knowledges?
+    var knowledge: Knowledge?
     var expandId: String?
     var isCopied = false
     var isCodeblockCopied = false

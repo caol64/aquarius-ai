@@ -10,7 +10,7 @@ import SwiftData
 
 @Observable
 class KnowledgeViewModel: BaseViewModel {
-    var knowledges: [Knowledges] = []
+    var knowledges: [Knowledge] = []
     var isBuilding = false
     
     override init(errorBinding: ErrorBinding, modelContext: ModelContext) {
@@ -20,28 +20,28 @@ class KnowledgeViewModel: BaseViewModel {
     
     private func fetch() {
         Task {
-            let descriptor = FetchDescriptor<Knowledges>(
-                sortBy: [SortDescriptor(\Knowledges.createdAt, order: .forward)]
+            let descriptor = FetchDescriptor<Knowledge>(
+                sortBy: [SortDescriptor(\Knowledge.createdAt, order: .forward)]
             )
             knowledges = _fetch(descriptor: descriptor)
         }
     }
     
-    func onAdd() -> Knowledges {
-        let knowledge = Knowledges(name: "new knowledge")
+    func onAdd() -> Knowledge {
+        let knowledge = Knowledge(name: "new knowledge")
         save(knowledge)
         fetch()
         return knowledge
     }
     
-    func onDelete(_ knowledge: Knowledges?) {
+    func onDelete(_ knowledge: Knowledge?) {
         if let knowledge = knowledge {
             delete(knowledge)
             fetch()
         }
     }
     
-    func buildIndex(knowledge: Knowledges) {
+    func buildIndex(knowledge: Knowledge) {
         guard knowledge.status != .inited else {
             handleError(error: AppError.bizError(description: "Please choose the knowledge file."))
             return
@@ -64,7 +64,7 @@ class KnowledgeViewModel: BaseViewModel {
         }
     }
     
-    func handleModelPath(knowledge: Knowledges, directory: URL) {
+    func handleModelPath(knowledge: Knowledge, directory: URL) {
         knowledge.file = directory.path()
         knowledge.name = directory.lastPathComponent
         let gotAccess = directory.startAccessingSecurityScopedResource()

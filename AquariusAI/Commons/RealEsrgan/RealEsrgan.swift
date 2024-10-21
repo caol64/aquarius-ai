@@ -10,10 +10,10 @@ import Vision
 import AppKit
 
 class RealEsrgan {
-    private let model: Models
+    private let model: Mlmodel
     private var mlModel: MLModel?
     
-    init(model: Models) {
+    init(model: Mlmodel) {
         self.model = model
     }
     

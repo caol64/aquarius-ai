@@ -10,7 +10,7 @@ import SwiftData
 
 @Observable
 class ModelViewModel: BaseViewModel {
-    var models: [Models] = []
+    var models: [Mlmodel] = []
     
     override init(errorBinding: ErrorBinding, modelContext: ModelContext) {
         super.init(errorBinding: errorBinding, modelContext: modelContext)
@@ -19,51 +19,45 @@ class ModelViewModel: BaseViewModel {
     
     private func _fetch() {
         Task {
-            let descriptor = FetchDescriptor<Models>(
-                sortBy: [SortDescriptor(\Models.createdAt, order: .forward)]
+            let descriptor = FetchDescriptor<Mlmodel>(
+                sortBy: [SortDescriptor(\Mlmodel.createdAt, order: .forward)]
             )
             models = _fetch(descriptor: descriptor)
         }
     }
     
-    func fetch(modelFamily: ModelFamily) -> [Models] {
-        return models.filter{ $0.family == modelFamily }
-    }
-    
-    func fetch(modelType: ModelType) -> [Models] {
+    func fetch(modelType: ModelType) -> [Mlmodel] {
         return models.filter{ $0.type == modelType }
     }
 
-    func get(id: String) -> Models? {
+    func get(id: String) -> Mlmodel? {
         return models.first(where: { $0.id == id })
     }
     
-    func onAdd(modelType: ModelType) -> Models {
-        let model = Models(name: "new model", family: modelType.supportedFamily.first!, type: modelType)
+    func onAdd(modelType: ModelType) -> Mlmodel {
+        let model = Mlmodel(name: "new model", type: modelType)
         save(model)
         _fetch()
         return model
     }
     
-    func onDelete(model: Models?) {
+    func onDelete(model: Mlmodel?) {
         if let model = model {
             delete(model)
             _fetch()
         }
     }
     
-    func selectDefault(modelFamily: ModelFamily) -> Models? {
-        let models = fetch(modelFamily: modelFamily)
+    func selectDefault(modelFamily: ModelFamily) -> Mlmodel? {
         return models.first
     }
     
-    func selectDefault(modelType: ModelType) -> Models? {
+    func selectDefault(modelType: ModelType) -> Mlmodel? {
         let models = fetch(modelType: modelType)
         return models.first
     }
     
-    func handleModelPath(model: Models, directory: URL) {
-        model.endpoint = directory.path()
+    func handleModelPath(model: Mlmodel, directory: URL) {
         model.name = directory.lastPathComponent
         let gotAccess = directory.startAccessingSecurityScopedResource()
         defer {

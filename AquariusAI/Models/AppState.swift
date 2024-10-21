@@ -11,7 +11,17 @@ import SwiftUI
 @Observable
 class AppState {
     var activatedPage: Page?
-    var errorBinding: ErrorBinding = ErrorBinding()
+    var appError: AppError?
+    
+    var showError: Binding<Bool> {
+        Binding {
+            return self.appError != nil
+        } set: { showError in
+            if !showError {
+                self.appError = nil
+            }
+        }
+    }
     var openedWindows: Set<Page> = []
     
     func activePage(page: Page) {
@@ -20,30 +30,30 @@ class AppState {
 
     var showSettingsError: Binding<Bool> {
         Binding {
-            return self.errorBinding.appError != nil && self.activatedPage == .settings
+            return self.appError != nil && self.activatedPage == .settings
         } set: { showError in
             if !showError {
-                self.errorBinding.appError = nil
+                self.appError = nil
             }
         }
     }
     
     var showTextError: Binding<Bool> {
         Binding {
-            return self.errorBinding.appError != nil && self.activatedPage == .text
+            return self.appError != nil && self.activatedPage == .text
         } set: { showError in
             if !showError {
-                self.errorBinding.appError = nil
+                self.appError = nil
             }
         }
     }
     
     var showImageError: Binding<Bool> {
         Binding {
-            return self.errorBinding.appError != nil && self.activatedPage == .image
+            return self.appError != nil && self.activatedPage == .image
         } set: { showError in
             if !showError {
-                self.errorBinding.appError = nil
+                self.appError = nil
             }
         }
     }

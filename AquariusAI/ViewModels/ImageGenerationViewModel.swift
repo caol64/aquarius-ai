@@ -1,5 +1,5 @@
 //
-//  ImageViewModel.swift
+//  ImageGenerationViewModel.swift
 //  AquariusAI
 //
 //  Created by Lei Cao on 2024/8/9.
@@ -10,7 +10,7 @@ import CoreGraphics.CGImage
 import StableDiffusion
 
 @Observable
-class ImageViewModel: BaseViewModel {
+class ImageGenerationViewModel: BaseViewModel {
     
     enum GenerationState {
         case startup
@@ -22,7 +22,7 @@ class ImageViewModel: BaseViewModel {
     
     var prompt: String = ""
     var negativePrompt: String = ""
-    var selectedModel: Models?
+    var selectedModel: Mlmodel?
     var showFileExporter: Bool = false
     var config: DiffusersConfig = DiffusersConfig()
     var generationState: GenerationState = .startup
@@ -90,7 +90,7 @@ class ImageViewModel: BaseViewModel {
         generationState = .startup
     }
     
-    func onUpscale(image: CGImage, model: Models) {
+    func onUpscale(image: CGImage, model: Mlmodel) {
         Task {
             do {
                 status = "Upscaling..."

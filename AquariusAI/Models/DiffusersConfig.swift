@@ -9,7 +9,7 @@ import Foundation
 @Observable
 class DiffusersConfig {
     var stepCount: Int = 6
-    var cfgScale: Double = 2.0
+    var cfgScale: Float = 2.0
     var isXL: Bool = true
     var seed: Int = -1
     var reduceMemory: Bool {

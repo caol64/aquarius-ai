@@ -64,13 +64,13 @@ func restoreFileAccess(with bookmarkData: Data, onStale: (_ data: Data) -> Void)
         let url = try URL(resolvingBookmarkData: bookmarkData, options: .withSecurityScope, relativeTo: nil, bookmarkDataIsStale: &isStale)
         if isStale {
             // bookmarks could become stale as the OS changes
-            logger.info("Bookmark is stale, need to save a new one... ")
+            print("Bookmark is stale, need to save a new one... ")
             let bookmarkData = try createBookmarkData(for: url)
             onStale(bookmarkData)
         }
         return url
     } catch {
-        logger.error("Error resolving bookmark: \(error)")
+        print("Error resolving bookmark:", error)
         return nil
     }
 }
