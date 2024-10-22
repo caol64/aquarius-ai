@@ -11,11 +11,18 @@ import SwiftUI
 import Highlightr
 
 class HighlightrCodeSyntaxHighlighter: CodeSyntaxHighlighter {
+    static let shared = HighlightrCodeSyntaxHighlighter()
+    private var highlightr: Highlightr?
+    
+    private init() {
+        highlightr = Highlightr()
+        highlightr?.setTheme(to: "github")
+    }
+    
     func highlightCode(_ code: String, language: String?) -> Text {
-        guard let highlightr = Highlightr() else {
+        guard let highlightr = highlightr else {
             return Text(code)
         }
-        highlightr.setTheme(to: "monokai")
         let highlightedCode: NSAttributedString?
         if let language, !language.isEmpty {
             highlightedCode = highlightr.highlight(code, as: language)

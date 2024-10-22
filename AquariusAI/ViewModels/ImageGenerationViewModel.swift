@@ -30,7 +30,7 @@ class ImageGenerationViewModel: BaseViewModel {
     var expandId: String?
     private let scheduler: StableDiffusionScheduler = .dpmSolverMultistepScheduler
     private let rng: StableDiffusionRNG = .numpyRNG
-    var canceled = false
+    private var canceled = false
     
     func closeModelListPopup() {
         showModelPicker = false

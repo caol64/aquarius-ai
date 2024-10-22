@@ -29,7 +29,6 @@ class TextGenerationViewModel: BaseViewModel {
     var knowledge: Knowledge?
     var expandId: String?
     var isCopied = false
-    var isCodeblockCopied = false
     var modelLoadState: LoadState = .idle
     var gpuActiveMemory: Int = 0
     var generationState: GenerationState<String> = .ready
@@ -115,14 +114,6 @@ class TextGenerationViewModel: BaseViewModel {
         let pasteBoard = NSPasteboard.general
         pasteBoard.clearContents()
         pasteBoard.setString(code, forType: .string)
-        
-        isCodeblockCopied = true
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            withAnimation {
-                self.isCodeblockCopied = false
-            }
-        }
     }
     
     private func load(model: Mlmodel) async throws -> (ModelConfiguration, ModelContainer) {

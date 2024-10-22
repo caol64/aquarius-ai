@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		AB081CE92CC750E600D45D03 /* MarkdownUI+Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB081CE82CC750E600D45D03 /* MarkdownUI+Theme.swift */; };
 		AB21AD142CC24A9D001A7403 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = AB21AD132CC24A9D001A7403 /* LLM */; };
 		AB21AD172CC25249001A7403 /* Logging in Frameworks */ = {isa = PBXBuildFile; productRef = AB21AD162CC25249001A7403 /* Logging */; };
 		AB21AD192CC252C5001A7403 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB21AD182CC252C5001A7403 /* Logger.swift */; };
@@ -100,6 +101,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		AB081CE82CC750E600D45D03 /* MarkdownUI+Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MarkdownUI+Theme.swift"; sourceTree = "<group>"; };
 		AB21AD182CC252C5001A7403 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logger.swift; sourceTree = "<group>"; };
 		AB2D6D8F2CBFADF200170BFB /* DataRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataRepository.swift; sourceTree = "<group>"; };
 		AB3D26A22C5CB7CD00E4E2A1 /* Knowledge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Knowledge.swift; sourceTree = "<group>"; };
@@ -239,6 +241,7 @@
 			isa = PBXGroup;
 			children = (
 				ABB981D32C5237A400AD94D9 /* View+Aligned.swift */,
+				AB081CE82CC750E600D45D03 /* MarkdownUI+Theme.swift */,
 				ABEA00B42C5342220020C46E /* NSImage+PngData.swift */,
 				AB93738B2C57A16A004947A0 /* UTType+MLmodel.swift */,
 				ABDE040E2C587C0F00A90857 /* CGImage+CVPixel.swift */,
@@ -567,6 +570,7 @@
 				AB3DF6CE2C5B98BB007CA0F8 /* KnowledgeSettingsView.swift in Sources */,
 				AB2D6D902CBFADF200170BFB /* DataRepository.swift in Sources */,
 				ABB908132C6E040100B4D6C2 /* HighlightrCodeSyntaxHighlighter.swift in Sources */,
+				AB081CE92CC750E600D45D03 /* MarkdownUI+Theme.swift in Sources */,
 				AB4D8C092C59FDD4002D2748 /* ModelPickerToolbar.swift in Sources */,
 				ABB62FC12C6996E500A25EB1 /* ModelType.swift in Sources */,
 				ABF9E9862C6229640034957D /* KnowledgeSetupGroup.swift in Sources */,
