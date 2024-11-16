@@ -11,7 +11,7 @@ import Generation
 import Hub
 import Models
 
-public class LanguageModel {
+public class TFLanguageModel {
     public let model: MLModel
     
     public let minContextLength: Int
@@ -26,7 +26,7 @@ public class LanguageModel {
         var tokenizerData: Config
     }
     
-    private var configuration: LanguageModelConfigurationFromHub? = nil
+    var configuration: TFLanguageModelConfiguration? = nil
     private var _tokenizer: Tokenizer? = nil
 
     public required init(model: MLModel) {
@@ -57,20 +57,22 @@ public class LanguageModel {
             maxContextLength = 128
         }
                 
-        self.configuration = LanguageModelConfigurationFromHub(modelName: modelName)
     }
 }
 
-public extension LanguageModel {
-    static func loadCompiled(url: URL, computeUnits: MLComputeUnits = .cpuAndGPU) throws -> LanguageModel {
+public extension TFLanguageModel {
+    static func loadCompiled(url: URL, computeUnits: MLComputeUnits = .cpuAndGPU) throws -> TFLanguageModel {
         let config = MLModelConfiguration()
         config.computeUnits = computeUnits
-        let model = try MLModel(contentsOf: url, configuration: config)
-        return LanguageModel(model: model)
+        let folderName = url.lastPathComponent
+        let model = try MLModel(contentsOf: url.appendingPathComponent("\(folderName).mlmodelc"), configuration: config)
+        let languageModel = TFLanguageModel(model: model)
+        languageModel.configuration = TFLanguageModelConfiguration(modelFolder: url)
+        return languageModel
     }
 }
 
-public extension LanguageModel {
+public extension TFLanguageModel {
     var description: String {
         if let description = model.modelDescription.metadata[MLModelMetadataKey.description] as? String,
            !description.isEmpty {
@@ -137,69 +139,72 @@ public extension LanguageModel {
 }
 
 /// async properties downloaded from the configuration
-public extension LanguageModel {
+public extension TFLanguageModel {
     var modelConfig: Config {
-        get async throws {
-            try await configuration!.modelConfig
+        get {
+            configuration!.modelConfig
         }
     }
     
     var tokenizerConfig: Config? {
-        get async throws {
-            try await configuration!.tokenizerConfig
+        get throws {
+            try configuration!.tokenizerConfig
         }
     }
     
     var tokenizerData: Config {
-        get async throws {
-            try await configuration!.tokenizerData
+        get {
+            configuration!.tokenizerData
         }
     }
     
     var modelType: String? {
-        get async throws {
-            try await modelConfig.modelType?.stringValue
+        get {
+            modelConfig.modelType?.stringValue
         }
     }
     
     var textGenerationParameters: Config? {
-        get async throws {
-            try await modelConfig.taskSpecificParams?.textGeneration
+        get {
+            modelConfig.taskSpecificParams?.textGeneration
         }
     }
     
     var defaultDoSample: Bool {
-        get async throws {
-            try await textGenerationParameters?.doSample?.boolValue ?? true
+        get {
+            textGenerationParameters?.doSample?.boolValue ?? true
         }
     }
 
     var bosTokenId: Int? {
-        get async throws {
-            let modelConfig = try await modelConfig
+        get {
+            let modelConfig = modelConfig
             return modelConfig.bosTokenId?.intValue
         }
     }
     
     var eosTokenId: Int? {
-        get async throws {
-            let modelConfig = try await modelConfig
+        get {
+            let modelConfig = modelConfig
             return modelConfig.eosTokenId?.intValue
         }
     }
     
     var tokenizer: Tokenizer {
         get async throws {
-            guard _tokenizer == nil else { return _tokenizer! }
-            guard let tokenizerConfig = try await tokenizerConfig else { throw "Cannot retrieve Tokenizer configuration" }
-            let tokenizerData = try await tokenizerData
-            _tokenizer = try AutoTokenizer.from(tokenizerConfig: tokenizerConfig, tokenizerData: tokenizerData)
-            return _tokenizer!
+            if let tokenizer = _tokenizer {
+                return tokenizer
+            }
+            print(55)
+            let tokenizer = try PreTrainedTokenizer(tokenizerConfig: configuration!.tokenizerConfig!, tokenizerData: configuration!.tokenizerData)
+            print(66)
+            _tokenizer = tokenizer
+            return tokenizer
         }
     }
 }
 
-extension LanguageModel: TextGenerationModel {
+extension TFLanguageModel: TextGenerationModel {
     //TODO: retrieve from the json: https://huggingface.co/nlpcloud/instruct-gpt-j-fp16/blob/main/config.json#L26
     public var defaultGenerationConfig: GenerationConfig {
         var config = GenerationConfig(maxNewTokens: 30)

@@ -8,16 +8,13 @@
 import Foundation
 import MarkdownUI
 import SwiftUI
-import MLXLLM
-import MLX
 import Tokenizers
 
 @Observable
 class TextGenerationViewModel: BaseViewModel {
-    
     enum LoadState {
         case idle
-        case loaded(ModelContainer)
+        case loaded(TFLanguageModel)
     }
     
     var prompt: String = ""
@@ -25,13 +22,18 @@ class TextGenerationViewModel: BaseViewModel {
     var selectedModel: Mlmodel?
     var response: String = ""
     var showModelPicker = false
-    var config: LlmConfig = LlmConfig()
     var knowledge: Knowledge?
     var expandId: String?
     var isCopied = false
-    var modelLoadState: LoadState = .idle
-    var gpuActiveMemory: Int = 0
+    var contextLength: Int = 2048
+    var temperature: Float = 0.8
+    var seed: Int = -1
+    var repeatPenalty: Float = 1.1
+    var topK: Int = 40
+    var topP: Float = 0.9
     var generationState: GenerationState<String> = .ready
+    private var modelLoadState: LoadState = .idle
+    private let runner: TransformerRunner = .init()
     
     func closeModelListPopup() {
         showModelPicker = false
@@ -49,50 +51,35 @@ class TextGenerationViewModel: BaseViewModel {
             handleError(error: AppError.missingModel)
             return
         }
-        let parameters = GenerateParameters(
-            temperature:  config.temperature,
-            topP: config.topP,
-            repetitionPenalty: config.repeatPenalty,
-            repetitionContextSize: 20
-        )
         generationState = .running("")
+        let config = TransformerConfig(contextLength: contextLength, temperature: temperature, seed: seed, repeatPenalty: repeatPenalty, topK: topK, topP: topP)
         Task {
-            let (modelConfiguration, modelContainer) = try await load(model: model)
-            let prompt = """
-<|im_start|>system
-\(systemPrompt)
-<|im_end|><|im_start|>user
-\(prompt)
-<|im_end|><|im_start|>assistant
-"""
-            let promptTokens = await modelContainer.perform { _, tokenizer in
-                let promptTokens = tokenizer.encode(text: prompt)
-                return promptTokens
+            let startTime = Date()
+            let languageModel: TFLanguageModel
+            switch modelLoadState {
+            case .idle:
+                languageModel = try await runner.load(config: config, model: model)
+            case .loaded(let theModel):
+                languageModel = theModel
             }
-//            logger.info(prompt)
-            let result = await modelContainer.perform { model, tokenizer in
-                return MLXLLM.generate(
-                    promptTokens: promptTokens,
-                    parameters: parameters,
-                    model: model,
-                    tokenizer: tokenizer,
-                    extraEOSTokens: modelConfiguration.extraEOSTokens.union([
-                        "<|im_end|>", "<|end|>",
-                    ])
-                ) { tokens in
-                    let text = tokenizer.decode(tokens: tokens)
-//                    self.response = text
-                    generationState = .running(text)
-
-                    if tokens.count >= 1024 {
-                        return .stop
-                    } else {
-                        return .more
-                    }
-                }
+            let interval = Date().timeIntervalSince(startTime)
+            let prompt = "\(prompt)\n"
+//            let prompt = """
+//<|im_start|>system
+//\(systemPrompt)
+//<|im_end|><|im_start|>user
+//\(prompt)
+//<|im_end|><|im_start|>assistant
+//"""
+            let generationConfig = config.toGenerationConfig()
+            var tokensReceived = 0
+            let result = try await runner.generate(prompt: prompt, languageModel: languageModel, generationConfig: generationConfig) { inProgressGeneration in
+                print(inProgressGeneration)
+                tokensReceived += 1
+                self.generationState = .running(inProgressGeneration)
             }
-            generationState = .complete(result.output)
-            response = result.output
+            generationState = .complete(result)
+            response = result
         }
     }
     
@@ -114,42 +101,6 @@ class TextGenerationViewModel: BaseViewModel {
         let pasteBoard = NSPasteboard.general
         pasteBoard.clearContents()
         pasteBoard.setString(code, forType: .string)
-    }
-    
-    private func load(model: Mlmodel) async throws -> (ModelConfiguration, ModelContainer) {
-        let modelConfiguration: ModelConfiguration = ModelConfiguration(directory: URL(filePath: model.localPath))
-        switch modelLoadState {
-        case .idle:
-            let cacheLimit = 128 * 1024 * 1024
-            MLX.GPU.set(cacheLimit: cacheLimit)
-            var modelDirectory: URL?
-            if let data = model.bookmark {
-                modelDirectory = restoreFileAccess(with: data) { data in
-                    model.bookmark = data
-                }
-            }
-            guard let directory = modelDirectory else {
-                throw AppError.bizError(description: "The model path is invalid, please check it in settings.")
-            }
-            _ = directory.startAccessingSecurityScopedResource()
-            defer {
-                directory.stopAccessingSecurityScopedResource()
-            }
-            if !isDirectoryReadable(path: directory.path()) {
-                throw AppError.directoryNotReadable(path: directory.path())
-            }
-            let modelContainer = try await MLXLLM.loadModelContainer(configuration: modelConfiguration)
-
-            withAnimation {
-                gpuActiveMemory = MLX.GPU.activeMemory / 1024 / 1024
-            }
-
-            modelLoadState = .loaded(modelContainer)
-            return (modelConfiguration, modelContainer)
-
-        case .loaded(let modelContainer):
-            return (modelConfiguration, modelContainer)
-        }
     }
 
 }

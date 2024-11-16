@@ -10,7 +10,10 @@ import SwiftData
 
 @Observable
 class ModelViewModel: BaseViewModel {
-    let dataRepository: DataRepository
+    private let dataRepository: DataRepository
+    private let descriptor = FetchDescriptor<Mlmodel>(
+        sortBy: [SortDescriptor(\Mlmodel.createdAt, order: .forward)]
+    )
     var models: [Mlmodel] = []
     
     init(dataRepository: DataRepository) {
@@ -20,13 +23,8 @@ class ModelViewModel: BaseViewModel {
     }
     
     private func _fetch() {
-        Task {
-            let descriptor = FetchDescriptor<Mlmodel>(
-                sortBy: [SortDescriptor(\Mlmodel.createdAt, order: .forward)]
-            )
-            models = dataRepository.fetch(descriptor: descriptor) { error in
-                handleError(error: error)
-            }
+        models = dataRepository.fetch(descriptor: descriptor) { error in
+            handleError(error: error)
         }
     }
     

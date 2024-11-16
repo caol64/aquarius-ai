@@ -17,15 +17,19 @@ struct GenerationParameterGroup: View {
     }
     
     @Binding var expandId: String?
-    @Binding var config: LlmConfig
+    @Binding var contextLength: Int
+    @Binding var temperature: Float
+    @Binding var seed: Int
+    @Binding var repeatPenalty: Float
+    @Binding var topP: Float
     
     var body: some View {
         Group {
-            intSlideGroup(id: Groups.context.rawValue, expandId: $expandId, setting: $config.contextLength, range: 2048...131072, step: 1)
-            slideGroup(id: Groups.temperature.rawValue, expandId: $expandId, setting: $config.temperature, range: 0...2, step: 0.1, precision: "%.1f")
-            intSlideGroup(id: Groups.seed.rawValue, expandId: $expandId, setting: $config.seed, range: -1...65535, step: 1)
-            slideGroup(id: Groups.repeatPenalty.rawValue, expandId: $expandId, setting: $config.repeatPenalty, range: 0...2, step: 0.1, precision: "%.1f")
-            slideGroup(id: Groups.topP.rawValue, expandId: $expandId, setting: $config.topP, range: 0...1, step: 0.01, precision: "%.2f")
+            intSlideGroup(id: Groups.context.rawValue, expandId: $expandId, setting: $contextLength, range: 2048...131072, step: 1)
+            slideGroup(id: Groups.temperature.rawValue, expandId: $expandId, setting: $temperature, range: 0...2, step: 0.1, precision: "%.1f")
+            intSlideGroup(id: Groups.seed.rawValue, expandId: $expandId, setting: $seed, range: -1...65535, step: 1)
+            slideGroup(id: Groups.repeatPenalty.rawValue, expandId: $expandId, setting: $repeatPenalty, range: 0...2, step: 0.1, precision: "%.1f")
+            slideGroup(id: Groups.topP.rawValue, expandId: $expandId, setting: $topP, range: 0...1, step: 0.01, precision: "%.2f")
         }
     }
 

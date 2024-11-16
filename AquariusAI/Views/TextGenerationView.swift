@@ -16,27 +16,67 @@ struct TextGenerationView: View {
     var body: some View {
         @Bindable var viewModel = viewModel
         NavigationSplitView {
-            sidebar
-                .topAligned()
-                .padding(.leading, 16)
-                .navigationSplitViewColumnWidth(300)
-        } detail: {
-            contentView
-                .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
-                .navigationTitle("")
-                .toolbar {
-                    ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .text)
-                    ToolbarItemGroup {
-                        Button("Copy", systemImage: viewModel.isCopied ? "checkmark" : "clipboard") {
-                            viewModel.onCopy()
+            VStack {
+                generationOptions()
+                ScrollView {
+                    prompts
+                    KnowledgeSetupGroup(expandId: $viewModel.expandId, knowledge: $viewModel.knowledge)
+                        .padding(.trailing, 16)
+                    GenerationParameterGroup(expandId: $viewModel.expandId, contextLength: $viewModel.contextLength, temperature: $viewModel.temperature, seed: $viewModel.seed, repeatPenalty: $viewModel.repeatPenalty, topP: $viewModel.topP)
+                        .padding(.trailing, 16)
+                }
+                VStack {
+                    if case .running = viewModel.generationState {
+                        Button("Cancel") {
+                            
                         }
+                        .frame(width: 100)
+                    } else {
+                        Button("Generate") {
+                            viewModel.onGenerate()
+                        }
+                        .frame(width: 100)
                     }
                 }
-                .overlay(alignment: .top) {
-                    if viewModel.showModelPicker {
-                        ModelListPopup(model: $viewModel.selectedModel, modelType: .text)
+                .buttonStyle(.borderedProminent)
+                .rightAligned()
+                .padding(.trailing, 16)
+            }
+            .topAligned()
+            .padding(.leading, 16)
+            .navigationSplitViewColumnWidth(300)
+        } detail: {
+            VStack(spacing: 0) {
+                switch viewModel.generationState {
+                case .running(let text):
+                    if let text = text {
+                        markdownView(text: text)
+                    }
+                case .complete(_):
+                    markdownView(text: viewModel.response)
+                default:
+                    Spacer()
+                    ContentUnavailableView {
+                        Text("How are you today?")
+                    }
+                    Spacer()
+                }
+            }
+            .navigationSplitViewColumnWidth(min: 750, ideal: 750, max: .infinity)
+            .navigationTitle("")
+            .toolbar {
+                ModelPickerToolbar(model: $viewModel.selectedModel, showModelPicker: $viewModel.showModelPicker, title: title, modelType: .text)
+                ToolbarItemGroup {
+                    Button("Copy", systemImage: viewModel.isCopied ? "checkmark" : "clipboard") {
+                        viewModel.onCopy()
                     }
                 }
+            }
+            .overlay(alignment: .top) {
+                if viewModel.showModelPicker {
+                    ModelListPopup(model: $viewModel.selectedModel, modelType: .text)
+                }
+            }
         }
         .onTapGesture {
             viewModel.closeModelListPopup()
@@ -48,58 +88,6 @@ struct TextGenerationView: View {
         }
         .onDisappear() {
             appState.openedWindows.remove(.text)
-        }
-    }
-    
-    // MARK: - sidebar
-    @ViewBuilder
-    @MainActor
-    private var sidebar: some View {
-        @Bindable var viewModel = viewModel
-        generationOptions()
-        ScrollView {
-            prompts
-            KnowledgeSetupGroup(expandId: $viewModel.expandId, knowledge: $viewModel.knowledge)
-                .padding(.trailing, 16)
-            GenerationParameterGroup(expandId: $viewModel.expandId, config: $viewModel.config)
-                .padding(.trailing, 16)
-        }
-        VStack {
-            if case .running = viewModel.generationState {
-                Button("Cancel") {
-                    
-                }
-                .frame(width: 100)
-            } else {
-                Button("Generate") {
-                    viewModel.onGenerate()
-                }
-                .frame(width: 100)
-            }
-        }
-        .buttonStyle(.borderedProminent)
-        .rightAligned()
-        .padding(.trailing, 16)
-    }
-    
-    // MARK: - contentView
-    @MainActor
-    private var contentView: some View {
-        VStack(spacing: 0) {
-            switch viewModel.generationState {
-            case .running(let text):
-                if let text = text {
-                    markdownView(text: text)
-                }
-            case .complete(_):
-                markdownView(text: viewModel.response)
-            default:
-                Spacer()
-                ContentUnavailableView {
-                    Text("How are you today?")
-                }
-                Spacer()
-            }
         }
     }
     

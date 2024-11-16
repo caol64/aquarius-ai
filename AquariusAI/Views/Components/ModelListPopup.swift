@@ -52,7 +52,7 @@ struct ModelListPopup: View {
     
     private func caculateHeight() {
         Task {
-            let models = await modelViewModel.fetch(modelType: modelType).count
+            let models = modelViewModel.fetch(modelType: modelType).count
             let height = CGFloat((models + 1) * 24 + 16)
             if height < menuHeight {
                 menuHeight = height

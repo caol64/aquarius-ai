@@ -10,7 +10,10 @@ import SwiftData
 
 @Observable
 class KnowledgeViewModel: BaseViewModel {
-    let dataRepository: DataRepository
+    private let dataRepository: DataRepository
+    private let descriptor = FetchDescriptor<Knowledge>(
+        sortBy: [SortDescriptor(\Knowledge.createdAt, order: .forward)]
+    )
     var knowledges: [Knowledge] = []
     var isBuilding = false
     
@@ -21,13 +24,8 @@ class KnowledgeViewModel: BaseViewModel {
     }
     
     private func fetch() {
-        Task {
-            let descriptor = FetchDescriptor<Knowledge>(
-                sortBy: [SortDescriptor(\Knowledge.createdAt, order: .forward)]
-            )
-            knowledges = dataRepository.fetch(descriptor: descriptor) { error in
-                handleError(error: error)
-            }
+        knowledges = dataRepository.fetch(descriptor: descriptor) { error in
+            handleError(error: error)
         }
     }
     

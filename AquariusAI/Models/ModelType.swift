@@ -18,7 +18,7 @@ enum ModelType: String, CaseIterable, Identifiable, Codable {
     var supportedFamily: [ModelFamily] {
         switch self {
         case .text:
-            return [.huggingface]
+            return [.coreml]
         case .image:
             return [.coreml]
         case .embedding:
