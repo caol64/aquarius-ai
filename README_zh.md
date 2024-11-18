@@ -6,18 +6,26 @@
 
 [English](README.md) | 中文
 
-`AquariusAI`是一个让您更方便地使用“开源AI模型”的`MAC`客户端，旨在解决您使用商用模型可能带来的隐私泄露和费用成本的担忧。`AquariusAI`本身不提供任何“AI模型”，您需要自行准备所需的模型。
+`AquariusAI`致力于研究在苹果设备（包括 Mac、iPhone 和 iPad）上独立运行本地大型模型的能力。目标是可以将`hugging face`上下载的模型直接（或通过转换后）运行在设备上，并且充分利用设备固有算力（CPU、GPU 和 NPU）。
+
+## 概念
+
+- CoreML
+
+> Core ML 是苹果公司的原生机器学习框架，也是它使用的文件格式的名称。在您将模型从（例如）PyTorch 转换为 Core ML 之后，您可以在 Swift 应用中使用它。Core ML 框架会自动选择最佳的硬件来运行您的模型：CPU、GPU 或一个称为神经引擎的专用张量单元。根据您的系统特性和模型细节，也可以组合使用这些计算单元中的多个。
+
+- Exporting a model to Core ML
 
 ## 特性
 
-- 文生文
-  - 适用于所有`Ollama`模型（`Llama 3`、`Phi 3`, `Mistral`, `Gemma 2`等）
-  - 知识库和`RAG`
-- 文生图
-  - 适用于`CoreML`格式的`Stable Diffusion`模型（包括`XL`模型）
-  - AI Upscaling
+### 文本生成
 
-不断增加中...
+使用[swift-transformers](https://github.com/huggingface/swift-transformers)加载和运行`CoreML`模型。
+
+### 图像生成
+使用[Core ML Stable Diffusion](https://github.com/apple/ml-stable-diffusion)加载和运行`CoreML`模型。
+
+### 不断增加中...
 
 ## 最低系统要求
 
